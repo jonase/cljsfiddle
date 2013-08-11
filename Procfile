@@ -1,0 +1,1 @@
+web: java $JVM_OPTS -cp target/cljsfiddle-standalone.jar clojure.main -m cljsfiddle.handler
