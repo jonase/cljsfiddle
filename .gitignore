@@ -12,5 +12,6 @@ pom.xml
 .lein-env
 .lein-repl-history
 .env
+resources/public/js/app.js
 *~
 libpeerconnection.log
