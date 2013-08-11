@@ -4,6 +4,7 @@
             [cljsfiddle.views :as views]
             [cljsfiddle.closure :as closure]
             [cljsfiddle.db :as db]
+            [ring.adapter.jetty :as jetty]
             [compojure.core :refer :all] 
             [compojure.handler :as handler]
             [compojure.route :as route]
@@ -35,8 +36,8 @@
       (json/decode true) 
       :login))
 
-;; 7 days
-(def max-age (str "max-age=" (* 60 60 24 7)))
+;; 1 day(s)
+(def max-age (str "max-age=" (* 60 60 24 1)))
 
 (defroutes app-routes
   (GET "/" 
@@ -107,3 +108,8 @@
 
 (def app
   (handler/site app-routes))
+
+(defn -main []
+  (db/create)
+  (let [port (Integer/parseInt (or (env "PORT") "8080"))]
+    (jetty/run-jetty app {:port port :join? false})))

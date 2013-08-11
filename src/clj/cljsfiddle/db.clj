@@ -27,3 +27,5 @@
      (sql/with-query-results results
        ["SELECT * FROM fiddles WHERE ns = ?" ns]
        (into [] results)))))
+
+(find-by-ns "jonase.bezier")

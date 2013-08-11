@@ -20,7 +20,6 @@
     [:script {:src "/js/codemirror.js"}]
     [:script {:src "/js/mode/clojure/clojure.js"}]
     [:script {:src "/js/mode/css/css.js"}]
-    [:script {:src "/js/mode/htmlembedded/htmlembedded.js"}]
     [:script {:src "/js/app.js"}]
     [:script "cljsfiddle.core.init();"]]])
 
@@ -43,4 +42,8 @@
          [:div.col-lg-6 [:iframe#result-frame {:seamless "seamless"
                                                :sandbox "allow-scripts"
                                                :width "100%"
-                                               :style "border: 1px solid black;height:260px;"}]]]))
+                                               :style "border: 1px solid black;height:260px;"}]]]
+        [:hr]
+        [:div.row
+         [:div.col-lg-12
+          [:p.text-center {:style "margin-bottom: 10px;"} [:a {:href "http://www.cljsfiddle.net"} "cljsfiddle"] " &copy; 2013 Jonas Enlund"]]]))

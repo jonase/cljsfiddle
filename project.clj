@@ -5,6 +5,7 @@
                  [org.clojure/clojurescript "0.0-1853"] 
                  [org.clojure/java.jdbc "0.3.0-alpha4"]
                  [postgresql "9.1-901.jdbc4"]
+                 [ring/ring-jetty-adapter "1.2.0"]
                  [compojure "1.1.5"]
                  [clj-http "0.7.6"]
                  [cheshire "5.2.0"]
@@ -15,6 +16,9 @@
   :source-paths ["src/clj" "src/cljs"]
   :plugins [[lein-ring "0.8.6"]
             [lein-cljsbuild "0.3.2"]]
+  :main cljsfiddle.handler
+  :uberjar-name "cljsfiddle-standalone.jar"
+  :min-lein-version "2.0.0"
   :profiles {:dev {:dependencies [[ring-mock "0.1.5"]]}}
   :ring {:handler cljsfiddle.handler/app}
   :cljsbuild {:builds [{:source-paths ["src/cljs"]
