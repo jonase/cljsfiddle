@@ -32462,25 +32462,25 @@ cljsfiddle.core.code_mirror = function code_mirror(id, opts) {
 };
 cljsfiddle.core.make_deps = function make_deps(deps) {
   return cljs.core.apply.call(null, cljs.core.str, '\x3cscript\x3eCLOSURE_NO_DEPS\x3dtrue;\x3c/script\x3e\x3cscript src\x3d"/deps/1/goog.base"\x3e\x3c/script\x3e\x3cscript\x3eCOMPILED\x3dtrue\x3c/script\x3e', function() {
-    var iter__3461__auto__ = function iter__16881(s__16882) {
+    var iter__3461__auto__ = function iter__19061(s__19062) {
       return new cljs.core.LazySeq(null, false, function() {
-        var s__16882__$1 = s__16882;
+        var s__19062__$1 = s__19062;
         while(true) {
-          var temp__4092__auto__ = cljs.core.seq.call(null, s__16882__$1);
+          var temp__4092__auto__ = cljs.core.seq.call(null, s__19062__$1);
           if(temp__4092__auto__) {
-            var s__16882__$2 = temp__4092__auto__;
-            if(cljs.core.chunked_seq_QMARK_.call(null, s__16882__$2)) {
-              var c__3459__auto__ = cljs.core.chunk_first.call(null, s__16882__$2);
+            var s__19062__$2 = temp__4092__auto__;
+            if(cljs.core.chunked_seq_QMARK_.call(null, s__19062__$2)) {
+              var c__3459__auto__ = cljs.core.chunk_first.call(null, s__19062__$2);
               var size__3460__auto__ = cljs.core.count.call(null, c__3459__auto__);
-              var b__16884 = cljs.core.chunk_buffer.call(null, size__3460__auto__);
+              var b__19064 = cljs.core.chunk_buffer.call(null, size__3460__auto__);
               if(function() {
-                var i__16883 = 0;
+                var i__19063 = 0;
                 while(true) {
-                  if(i__16883 < size__3460__auto__) {
-                    var dep = cljs.core._nth.call(null, c__3459__auto__, i__16883);
-                    cljs.core.chunk_append.call(null, b__16884, cljs.core.format.call(null, '\x3cscript src\x3d"/deps/1/%s"\x3e\x3c/script\x3e', dep));
-                    var G__16885 = i__16883 + 1;
-                    i__16883 = G__16885;
+                  if(i__19063 < size__3460__auto__) {
+                    var dep = cljs.core._nth.call(null, c__3459__auto__, i__19063);
+                    cljs.core.chunk_append.call(null, b__19064, cljs.core.format.call(null, '\x3cscript src\x3d"/deps/1/%s"\x3e\x3c/script\x3e', dep));
+                    var G__19065 = i__19063 + 1;
+                    i__19063 = G__19065;
                     continue
                   }else {
                     return true
@@ -32488,13 +32488,13 @@ cljsfiddle.core.make_deps = function make_deps(deps) {
                   break
                 }
               }()) {
-                return cljs.core.chunk_cons.call(null, cljs.core.chunk.call(null, b__16884), iter__16881.call(null, cljs.core.chunk_rest.call(null, s__16882__$2)))
+                return cljs.core.chunk_cons.call(null, cljs.core.chunk.call(null, b__19064), iter__19061.call(null, cljs.core.chunk_rest.call(null, s__19062__$2)))
               }else {
-                return cljs.core.chunk_cons.call(null, cljs.core.chunk.call(null, b__16884), null)
+                return cljs.core.chunk_cons.call(null, cljs.core.chunk.call(null, b__19064), null)
               }
             }else {
-              var dep = cljs.core.first.call(null, s__16882__$2);
-              return cljs.core.cons.call(null, cljs.core.format.call(null, '\x3cscript src\x3d"/deps/1/%s"\x3e\x3c/script\x3e', dep), iter__16881.call(null, cljs.core.rest.call(null, s__16882__$2)))
+              var dep = cljs.core.first.call(null, s__19062__$2);
+              return cljs.core.cons.call(null, cljs.core.format.call(null, '\x3cscript src\x3d"/deps/1/%s"\x3e\x3c/script\x3e', dep), iter__19061.call(null, cljs.core.rest.call(null, s__19062__$2)))
             }
           }else {
             return null
@@ -32516,6 +32516,8 @@ cljsfiddle.core.init = function init() {
   var result_frame = domina.by_id.call(null, "result-frame");
   var run_btn = domina.by_id.call(null, "run-btn");
   var save_btn = domina.by_id.call(null, "save-btn");
+  html_editor.setSize("100%", "150px");
+  css_editor.setSize("100%", "150px");
   run_btn.addEventListener("mousedown", function(e) {
     return hylla.remote.post.call(null, "/compile", cljs.core.PersistentArrayMap.fromArray(["\ufdd0:src", cljs_editor.getValue()], true), function(res) {
       var srcdoc = cljsfiddle.core.make_srcdoc.call(null, html_editor.getValue(), css_editor.getValue(), (new cljs.core.Keyword("\ufdd0:js-src")).call(null, res), (new cljs.core.Keyword("\ufdd0:dependencies")).call(null, res));

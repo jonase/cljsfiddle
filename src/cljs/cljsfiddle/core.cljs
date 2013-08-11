@@ -26,6 +26,9 @@
         result-frame (domina/by-id "result-frame")
         run-btn (domina/by-id "run-btn")
         save-btn (domina/by-id "save-btn")]
+    (.setSize html-editor "100%" "150px")
+    (.setSize css-editor "100%" "150px")
+
     (.addEventListener run-btn "mousedown" 
                        (fn [e] (remote/post "/compile" {:src (.getValue cljs-editor)}
                                             (fn [res]

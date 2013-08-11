@@ -35,7 +35,7 @@
           [:button#about-btn.btn.btn-default {:type "Button"} "Help"]]]
         [:hr]
         [:div.row
-         [:div.col-lg-6 [:textarea#html-editor (escape-html (:html fiddle))]]
+         [:div.col-lg-6 [:textarea#html-editor {:rows "4" :cols "10" :style "height:100px; width:100px"} (escape-html (:html fiddle))]]
          [:div.col-lg-6 [:textarea#css-editor (escape-html (:css fiddle))]]]
         [:div.row
          [:div.col-lg-6 [:textarea#cljs-editor (escape-html (:cljs fiddle))]]
