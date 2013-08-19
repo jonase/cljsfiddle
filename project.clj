@@ -3,6 +3,7 @@
   :url "http://cljsfiddle.net"
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-1853"] 
+                 [com.datomic/datomic-free "0.8.4138"]
                  [ring/ring-jetty-adapter "1.2.0"]
                  [compojure "1.1.5"]
                  [clj-http "0.7.6"]

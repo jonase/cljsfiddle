@@ -39,8 +39,8 @@
                                                 (.setAttribute result-frame "srcdoc" srcdoc))))))
     (.addEventListener save-btn "mousedown"
                        (fn [e]
-                         (remote/post "/save" {:cljs (.getValue cljs-editor)
-                                               :html (.getValue html-editor)
-                                               :css (.getValue css-editor)}
+                         (remote/post "/save" {:fiddle/cljs (.getValue cljs-editor)
+                                               :fiddle/html (.getValue html-editor)
+                                               :fiddle/css (.getValue css-editor)}
                                       (fn [res]
                                         (.log js/console (pr-str res))))))))
