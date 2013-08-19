@@ -3,8 +3,6 @@
   :url "http://cljsfiddle.net"
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-1853"] 
-                 [org.clojure/java.jdbc "0.3.0-alpha4"]
-                 [postgresql "9.1-901.jdbc4"]
                  [ring/ring-jetty-adapter "1.2.0"]
                  [compojure "1.1.5"]
                  [clj-http "0.7.6"]
