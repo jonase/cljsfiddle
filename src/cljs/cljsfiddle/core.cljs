@@ -19,6 +19,18 @@
           (make-deps deps)
           js))
 
+(defn alert [type msg]
+  (let [loc (dom/by-id "alert")]
+    (dom/destroy-children! loc)
+    (dom/append! loc
+                 (format "<div class=\"alert alert-%s fade_in\">%s<a class=\"close\" data-dismiss=\"alert\" href=\"#\" aria-hidden=\"true\">&times;</a></div>" type msg))))
+
+(defn alert-success [msg]
+  (alert "success" msg))
+
+(defn alert-error [msg]
+  (alert "danger" msg))
+
 (defn init
   [] 
   (let [html-editor (code-mirror "html-editor" {:lineNumbers true})
@@ -45,4 +57,6 @@
                                             :fiddle/html (.getValue html-editor)
                                             :fiddle/css (.getValue css-editor)}
                                    (fn [res]
-                                     (.log js/console (pr-str res))))))))
+                                     (if (= (:status res) :success)
+                                       (alert-success "Fiddle saved successfully!")
+                                       (alert-error (:msg res)))))))))

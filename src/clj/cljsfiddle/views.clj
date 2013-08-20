@@ -42,6 +42,9 @@
                                "Login with github"])]]]
         [:hr {:style "margin-top:4px;margin-bottom:4px;"}]
         [:div.row
+         [:div.col-lg-12
+          [:div#alert]]]
+        [:div.row
          [:div.col-lg-6 [:textarea#html-editor (escape-html (:fiddle/html fiddle))]]
          [:div.col-lg-6 [:textarea#css-editor (escape-html (:fiddle/css fiddle))]]]
         [:div.row

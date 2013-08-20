@@ -1,6 +1,8 @@
 (ns cljsfiddle.handler
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
+            [clojure.string :as s]
+            [clojure.core.match :refer (match)]
             [cljsfiddle.views :as views]
             [cljsfiddle.closure :as closure]
             [cljsfiddle.db :as db]
@@ -44,6 +46,17 @@
    :fiddle/html "<p>Hello, <strong id=\"msg\"></strong></p>\n"
    :fiddle/cljs "(ns cljsfiddle\n  (:require [domina :as dom]))\n\n(dom/set-html! (dom/by-id \"msg\") \"ClojureScript\")\n"})
 
+(defn parse-ns-form [src]
+  (try 
+    (let [form (edn/read-string src)]
+      (if (and (seq? form) 
+               (= 'ns (first form))
+               (symbol? (second form)))
+        [:ok (name (second form))]
+        [:fail form]))
+    (catch Exception e
+      [:exception (.getMessage e)])))
+
 (defn app-routes [conn]
   (routes
    (GET "/"
@@ -63,21 +76,26 @@
          :session (merge session
                          {:fiddle ns}))))
 
-
    (POST "/save"
-     [data]
-     (let [fiddle (edn/read-string data)
-           ns (second (edn/read-string (:fiddle/cljs fiddle)))]
-       (db/upsert conn (assoc fiddle :fiddle/ns (name ns))) 
-       (edn-response {:status :success})))
+     {{:keys [data]} :params
+      {:keys [username]} :session}
+     (let [fiddle (edn/read-string data)]
+       (edn-response
+        (match [username (parse-ns-form (:fiddle/cljs fiddle))]
+          [nil _] {:status :fail :msg "Login to save your work."}
+          [_ [:fail msg]] {:status :fail :msg msg}
+          [_ [:exception msg]] {:status :exception :msg msg}
+          [_ [:ok ns]] (if (= username (first (s/split ns #"\.")))
+                         (do (db/upsert conn (assoc fiddle :fiddle/ns ns))
+                             {:status :success})
+                         {:status :fail
+                          :msg (str "Can't save <strong> " ns "</strong>. Prefix the ns with your username.")})))))
    
    (GET "/oauth_login"
      {{:keys [code]} :params session :session}
      (if code
        (let [token (get-token code)
-             _ (println token)
-             username (get-username token)
-             _ (println username)]
+             username (get-username token)]
          (assoc (res/redirect (if-let [fiddle (:fiddle session)]
                                 (str "/fiddle/" fiddle)
                                 "/"))
@@ -109,3 +127,4 @@
 
 ;; (.stop server)
 ;; (def server (-main))
+
