@@ -2,8 +2,10 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as s]
             [clojure.set :as set]
+            [clojure.edn :as edn]
             [cljs.closure :as cljs]
             [clojure.pprint :refer [pprint]]
+            [compojure.core :refer :all]
             [alandipert.kahn :refer [kahn-sort]])
   (:import [clojure.lang LineNumberingPushbackReader]
            [java.util.logging Level]
@@ -13,6 +15,14 @@
                                          CompilerOptions
                                          CompilationLevel
                                          ClosureCodingConvention]))
+
+;; 1 day(s)
+(def max-age (str "max-age=" (* 60 60 24 1)))
+
+(defn edn-response [edn-data]
+  {:status 200
+   :headers {"Content-Type" "application/edn"}
+   :body (pr-str edn-data)})
 
 (defn- read-all* [^LineNumberingPushbackReader reader result eof]
   (let [form (read reader false eof)]
@@ -143,4 +153,28 @@
      (:js-src (compile-cljs* (slurp (io/resource file))))
      (slurp (io/resource file)))))
 
-(dependencies "domina")
+;; Routes
+(defroutes compiler-routes
+  (POST "/compile"
+     [data]
+     ;; TODO :src -> :cljs
+     (let [cljs-src-str (:src (edn/read-string data))]
+       (edn-response (compile-cljs cljs-src-str))))
+   
+   (GET "/deps/:version/goog.base"
+     [version]
+     {:headers {"Cache-Control" max-age
+                "Content-Type" "text/javascript"} 
+      :status 200
+      :body (:js-src (closure-compile 
+                      "goog/base.js" 
+                      (slurp (io/resource "goog/base.js"))))})
+   
+   (GET "/deps/:version/*"
+     [version *]
+     (let [file *]
+       {:headers {"Cache-Control" max-age
+                  "Content-Type" "text/javascript"} 
+        :status 200
+        :body (:js-src (compile-file file))})))
+
