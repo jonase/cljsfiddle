@@ -44,7 +44,7 @@
 (def default-fiddle 
   {:fiddle/css "p {\n  color: #f41;\n  font-family: helvetica;\n  font-size: 2em;\n  text-align: center\n}"
    :fiddle/html "<p>Hello, <strong id=\"msg\"></strong></p>\n"
-   :fiddle/cljs "(ns cljsfiddle\n  (:require [domina :as dom]))\n\n(dom/set-html! (dom/by-id \"msg\") \"ClojureScript\")\n"})
+   :fiddle/cljs "(ns cljsfiddle)\n\n(set! (.-innerHTML (.getElementById js/document \"msg\"))\n      \"CLJSFiddle\")\n"})
 
 (defn parse-ns-form [src]
   (try 
