@@ -6,6 +6,7 @@
                  [org.clojure/core.match "0.2.0-rc5"]
                  [com.datomic/datomic-free "0.8.4138"]
                  [ring/ring-jetty-adapter "1.2.0"]
+                 [me.raynes/fs "1.4.5"]
                  [compojure "1.1.5"]
                  [clj-http "0.7.6"]
                  [cheshire "5.2.0"]
