@@ -4,13 +4,16 @@
             [domina.events :as events]
             [hylla.remote :as remote]))
 
+(defn ends-with? [string suffix]
+  (not= -1 (.indexOf string suffix (- (.-length string) (.-length suffix)))))
+
 (defn code-mirror [id opts]
   (.fromTextArea js/CodeMirror (dom/by-id id) (clj->js opts)))
 
 (defn make-deps [deps]
-  (apply str "<script>CLOSURE_NO_DEPS=true;</script><script src=\"/compiler/deps/1/goog.base\"></script><script>COMPILED=true</script>"
+  (apply str "<script>CLOSURE_NO_DEPS=true;</script><script src=\"/deps/1/goog/base.js\"></script><script>COMPILED=true</script>"
          (for [dep deps]
-           (format "<script src=\"/compiler/deps/1/%s\"></script>" dep))))
+           (format "<script src=\"/deps/1/%s\"></script>" (s/replace dep ".cljs" ".js")))))
 
 (defn make-srcdoc [html css js deps]
   (format "<html><head><style>%s</style></head><body>%s</body>%s<script>%s</script></html>" 

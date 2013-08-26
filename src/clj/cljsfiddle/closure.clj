@@ -159,22 +159,5 @@
      [data]
      ;; TODO :src -> :cljs
      (let [cljs-src-str (:src (edn/read-string data))]
-       (edn-response (compile-cljs cljs-src-str))))
-   
-   (GET "/deps/:version/goog.base"
-     [version]
-     {:headers {"Cache-Control" max-age
-                "Content-Type" "text/javascript"} 
-      :status 200
-      :body (:js-src (closure-compile 
-                      "goog/base.js" 
-                      (slurp (io/resource "goog/base.js"))))})
-   
-   (GET "/deps/:version/*"
-     [version *]
-     (let [file *]
-       {:headers {"Cache-Control" max-age
-                  "Content-Type" "text/javascript"} 
-        :status 200
-        :body (:js-src (compile-file file))})))
+       (edn-response (compile-cljs cljs-src-str)))))
 
