@@ -1,6 +1,7 @@
 (ns cljsfiddle.core
   (:require [clojure.string :as s]
             [domina :as dom]
+            [domina.css :as css]
             [domina.events :as events]
             [hylla.remote :as remote]))
 
@@ -34,16 +35,21 @@
 (defn alert-error [msg]
   (alert "danger" msg))
 
-(defn init
+(defn ^:export init
   [] 
+  (alert-error "This is work-in-progress. Expect bugs/downtime and don't expect your saved work to be durable.")
+
   (let [html-editor (code-mirror "html-editor" {:lineNumbers true})
         css-editor (code-mirror "css-editor" {:mode :css :lineNumbers true})
         cljs-editor (code-mirror "cljs-editor" {:mode :clojure :lineNumbers true})
         result-frame (domina/by-id "result-frame")
         run-btn (domina/by-id "run-btn")
         save-btn (domina/by-id "save-btn")]
-    (.setSize html-editor "100%" "150px")
-    (.setSize css-editor "100%" "150px")
+    
+    (.setSize cljs-editor "100%" "455px")
+    (.setSize html-editor "100%" "455px")
+    (.setSize css-editor  "100%" "455px")
+
     (events/listen! run-btn :click
                     (fn [e] 
                       (remote/post "/compiler/compile" {:src (.getValue cljs-editor)}
@@ -62,4 +68,12 @@
                                    (fn [res]
                                      (if (= (:status res) :success)
                                        (alert-success "Fiddle saved successfully!")
-                                       (alert-error (:msg res)))))))))
+                                       (alert-error (:msg res)))))))
+
+    (.on (js/$ "a[data-toggle=\"tab\"]") 
+         "shown.bs.tab" 
+         (fn [evt]
+           (condp = (dom/attr (.-target evt) :href)
+             "#cljs-editor-tab" (.refresh cljs-editor)
+             "#html-editor-tab" (.refresh html-editor)
+             "#css-editor-tab" (.refresh css-editor))))))

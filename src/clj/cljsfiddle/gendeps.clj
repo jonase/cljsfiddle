@@ -38,6 +38,6 @@
   (optimize-ws (output-dir version))
   (println "done."))
 
-;; (-main "2")
+;; (-main "1")
 
 

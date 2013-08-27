@@ -22,7 +22,14 @@
   :min-lein-version "2.0.0"
   :profiles {:dev {:dependencies [[ring-mock "0.1.5"]]}}
   :ring {:handler cljsfiddle.handler/app}
-  :cljsbuild {:builds [{:source-paths ["src/cljs"]
+  :cljsbuild {:builds [{:id "dev"
+                        :source-paths ["src/cljs"]
                         :compiler {:output-to "resources/public/js/app.js"  
-                                   :optimizations :whitespace
-                                   :pretty-print true}}]})
+                                   :optimizations :simple
+                                   :pretty-print true}}
+                       {:id "prod"
+                        :source-paths ["src/cljs"]
+                        :compiler {:output-to "resources/public/js/app.js"  
+                                   :optimizations :advanced
+                                   :static-fns true
+                                   :externs ["externs.js"]}}]})
