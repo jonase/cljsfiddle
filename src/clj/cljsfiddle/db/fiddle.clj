@@ -25,16 +25,17 @@
         {cljs-tx :tx cljs-eid :id} (src/cljs-tx db cljs)
         {html-tx :tx html-eid :id} (src/html-tx db html)
         {css-tx  :tx css-eid  :id} (src/css-tx db css)]
-    (cond-> (vec (concat cljs-tx html-tx css-tx))
+    {:id fid
+     :tx (cond-> (vec (concat cljs-tx html-tx css-tx))
             
-            (not= cljs-old-eid cljs-eid) 
-            (conj [:db/add fid :cljsfiddle/cljs cljs-eid])
-            
-            (not= html-old-eid html-eid) 
-            (conj [:db/add fid :cljsfiddle/html html-eid])
-            
-            (not= css-old-eid  css-eid)  
-            (conj [:db/add fid :cljsfiddle/css css-eid]))))
+                 (not= cljs-old-eid cljs-eid) 
+                 (conj [:db/add fid :cljsfiddle/cljs cljs-eid])
+                 
+                 (not= html-old-eid html-eid) 
+                 (conj [:db/add fid :cljsfiddle/html html-eid])
+                 
+                 (not= css-old-eid  css-eid)  
+                 (conj [:db/add fid :cljsfiddle/css css-eid]))}))
 
 
 

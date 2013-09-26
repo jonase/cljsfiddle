@@ -45,11 +45,6 @@
       (json/decode true) 
       :login))
 
-(def default-fiddle 
-  {:fiddle/css "p {\n  color: #f41;\n  font-family: helvetica;\n  font-size: 2em;\n  text-align: center\n}"
-   :fiddle/html "<p>Hello, <strong id=\"msg\"></strong></p>\n"
-   :fiddle/cljs "(ns cljsfiddle)\n\n(set! (.-innerHTML (.getElementById js/document \"msg\"))\n      \"CLJSFiddle\")\n"})
-
 (defn parse-ns-form [src]
   (try 
     (let [form (edn/read-string src)]
@@ -62,7 +57,7 @@
       [:exception (.getMessage e)])))
 
 (defn as-of* 
-  "Get the db date or latest db if date is nil"
+  "Get the db as of date or latest db if date is nil"
   [conn date]
   (let [db (d/db conn)]
     (if date
@@ -75,7 +70,9 @@
      {{:keys [username] :as session} :session}
      (assoc {:headers {"Content-Type" "text/html"}
              :status 200
-             :body (html5 (views/main-view default-fiddle username))}
+             :body (html5 (views/main-view (d/entity (d/db conn)
+                                                     :cljsfiddle/default-fiddle) 
+                                           username))}
        :session (dissoc session :fiddle)))
    
    (GET "/fiddle/:ns"

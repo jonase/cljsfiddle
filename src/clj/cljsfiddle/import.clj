@@ -6,9 +6,10 @@
             [environ.core :refer (env)]
             [cljsfiddle.db.src :as src]
             [cljsfiddle.db.schema :refer (schema)]
-            [cljsfiddle.db.util :refer (sha
+            [cljsfiddle.db.util :as util :refer (sha
                                         cljs-object-from-file
-                                        js-object-from-file)])
+                                        js-object-from-file)]
+            [cljsfiddle.db.fiddle :as fiddle])
   (:import [clojure.lang LineNumberingPushbackReader]
            [java.util Date]
            [java.io StringReader BufferedReader]
@@ -48,6 +49,17 @@
        :else
        []))))
 
+(defn default-fiddle-tx [db]
+  (let [fiddle (util/fiddle "(ns cljsfiddle)\n\n(set! (.-innerHTML (.getElementById js/document \"msg\"))\n      \"CLJSFiddle\")\n"
+                            "<p>Hello, <strong id=\"msg\"></strong></p>\n"
+                            "p {\n  color: #f41;\n  font-family: helvetica;\n  font-size: 2em;\n  text-align: center\n}")
+        {:keys [tx id]} (fiddle/fiddle-tx db fiddle)]
+    (println tx id)
+    (if (not (empty? tx))
+      (cons [:db/add id :db/ident :cljsfiddle/default-fiddle]
+            tx)
+      tx)))
+
 ;; Import cljs and js deps. Idempotent
 (defn -main [uri]
   (let [conn (d/connect uri)
@@ -84,6 +96,12 @@
       (when-not (empty? tx)
         (println tx)
         @(d/transact conn tx)))
+    (println "Adding default fiddle")
+    (let [tx (default-fiddle-tx (d/db conn))]
+      (when-not (empty? tx)
+        (println tx)
+        @(d/transact conn tx)))
+
     (println "Running storage GC")
     (d/gc-storage conn (Date.))
     (println "Done.")))
@@ -125,4 +143,6 @@
   (:cljsfiddle.src/ns (d/entity (d/db conn) 17592186045435)) 
 
   (pprint (d/touch (:cljsfiddle.src/blob (d/entity (d/db conn) :goog/base))))
+
+  (d/entity (d/db conn) :cljsfiddle/default-fiddle)
   )

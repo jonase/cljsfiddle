@@ -55,7 +55,7 @@
 
 (defn save-fiddle [conn fiddle]
   (let [db (d/db conn)
-        tx (fiddle/fiddle-tx db fiddle)]
+        {:keys [tx id]} (fiddle/fiddle-tx db fiddle)]
     (if-not (empty? tx)
       (:db-after @(d/transact conn tx))
       db)))
