@@ -3,7 +3,7 @@
             [environ.core :refer (env)]
             [cljsfiddle.closure :refer [compile-cljs*]]))
 
-(defn base [& content] 
+(defn base [user & content] 
   [:html {:lang "en"}
    [:head
     [:title "CLJSFiddle"]
@@ -29,7 +29,8 @@
 
 (defn main-view 
   [fiddle user] 
-  (base [:nav.navbar.navbar-default {:role "navigation"}
+  (base user
+        [:nav.navbar.navbar-default {:role "navigation"}
          [:div.navbar-header
           [:button.navbar-toggle {:type "button"
                                   :data-toggle "collapse"
@@ -43,11 +44,8 @@
           [:ul.nav.navbar-nav
            [:li [:button#run-btn.btn.btn-default.navbar-btn {:type "button"} "Run"] "&nbsp;"]
            [:li [:button#save-btn.btn.btn-default.navbar-btn {:type "button"} "Save"] "&nbsp;"]
-           [:li [:button#recent-btn.btn.btn-default.navbar-btn {:type "button"} "Recent"] "&nbsp;"]
-           [:li [:button#about-btn.btn.btn-default.navbar-btn {:type "button" 
-                                                               :data-target "#aboutModal" 
-                                                               :data-toggle "modal"
-                                                               } "About"]]]
+           [:li [:a {:href "/recent"} "Recent"]]
+           [:li [:a {:href "/about"} "About"]]]
           [:ul.nav.navbar-nav.navbar-right
            [:li (if user 
                   [:a {:href "/logout"} "Logout (" user ")"] 
@@ -65,8 +63,7 @@
             [:textarea#cljs-editor.tab-pane.active (escape-html (-> fiddle 
                                                                     :cljsfiddle/cljs
                                                                     :cljsfiddle.src/blob
-                                                                    :cljsfiddle.blob/text
-))]] 
+                                                                    :cljsfiddle.blob/text))]] 
            [:div#html-editor-tab.tab-pane
             [:textarea#html-editor.tab-pane (escape-html (-> fiddle 
                                                              :cljsfiddle/html
@@ -85,20 +82,7 @@
         [:div.row
          [:div.col-lg-12
           [:p.text-center {:style "margin-bottom: 10px;"} 
-           [:a {:href "http://cljsfiddle.net"} "cljsfiddle.net"] " &copy; 2013 Jonas Enlund"]]]
-
-        [:div#aboutModal.modal.hide.fade {:tabindex -1
-                                          :role "dialog"
-                                          :aria-labelledby "aboutModalLabel"
-                                          :aria-hidden "true"}
-          [:div.modal-header
-           [:button.close {:type "button"
-                           :class "close"
-                           :data-dismiss "modal"
-                           :aria-hidden "true"}]
-           [:h3#aboutModalLabel "About"]]
-         [:div.modal-body
-          [:p "hmm..."]]]))
+           [:a {:href "http://cljsfiddle.net"} "cljsfiddle.net"] " &copy; 2013 Jonas Enlund"]]]))
 
 (defn html-view [ns fiddle deps]
   [:html
@@ -123,3 +107,26 @@
           :cljsfiddle.src/blob
           :cljsfiddle.blob/text
           compile-cljs*)]]])
+
+(defn about-view [user]
+  (base user
+        [:div.row
+         [:div.col-lg-12
+          [:h3 "About CLJSFiddle"]
+          [:ul 
+           [:li "CLJSFiddle is open source and available on " [:a {:href "http://github.com/jonase/cljsfiddle"} "github."]]
+           [:li "Feel free to open bug reports and feature requests! Pull requests are also appreciated!"]
+           [:li [:strong "Help needed"] " especially around user interface design."]]
+          
+          [:h3 "How does it work?"]
+          [:ul
+           [:li "In order to save your work you" [:strong " must login "] "via your github account."]
+           [:li "Prefix your namespace with your username: " [:pre "(ns username.test)"]]
+           [:li "Saved fiddles can be accessed either by"
+            [:ul 
+             [:li "Fiddle view: " [:span {:style "font-family:monospace"} "http://cljsfiddle.net/fiddle/name.space"]]
+             [:li "Html view: " [:span {:style "font-family:monospace"} "http://cljsfiddle.net/view/name.space"]]
+             [:li "Append the url with " [:span {:style "font-family:monospace"} "?as-of=&lt;some-date&gt;"] 
+              " for older versions and permalinks."]
+             [:li "The date format is the same as clojure instant literals (without the #inst part): 2013-09-29 or 2013-10-02T13:15:01 "]]]]]]))
+

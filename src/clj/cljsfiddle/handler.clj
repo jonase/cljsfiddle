@@ -99,6 +99,12 @@
           :status 200
           :body (html5 (views/html-view ns fiddle deps))}))))
 
+   (GET "/about"
+     {{:keys [username]} :session}
+     {:headers {"Content-Type" "text/html"}
+      :status 200
+      :body (html5 (views/about-view username))})
+
    (POST "/save"
      {fiddle :params
       {:keys [username]} :session}
@@ -126,7 +132,9 @@
      (let [fp (str "/jscache/" version "/" file)
            fr (res/file-response fp {:root "resources"})]
        (if fr
-         (res/header fr "Cache-Control" (str "max-age=" (* 60 60 24 365)))
+         (-> fr
+             (res/header "Cache-Control" (str "max-age=" (* 60 60 24 365)))
+             (res/header "Content-Type" "application/javascript"))
          (do (println "Cache miss:" fp)
              (res/redirect (str "/deps/" version "/" file))))))
 
