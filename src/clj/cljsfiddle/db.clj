@@ -1,60 +1,90 @@
 (ns cljsfiddle.db
-  (:require [datomic.api :as d]))
+  (:require [cljsfiddle.db.fiddle :as fiddle]
+            [cljsfiddle.db.util :as util]
+            [datomic.api :as d]
+            [environ.core :refer (env)]))
 
-(defn create [conn schema]
-  ;; TODO migrations
-  (d/transact conn schema))
+(defn requires [db ns]
+  (map first
+       (d/q '[:find ?requires
+              :in $ ?ns
+              :where 
+              [?e :cljsfiddle.src/ns ?ns]
+              [?e :cljsfiddle.src/requires ?requires]]
+            db ns)))
 
-(defn upsert [conn fiddle]
-  (d/transact conn [(assoc fiddle :db/id (d/tempid :db.part/user))]))
+(defn- toposort* [node dag sorted temporary visited]
+  (when-not (@visited node)
+    (when (@temporary node) (throw (ex-info "Not a DAG." {})))
+    (swap! temporary conj node)
+    (doseq [n (requires dag node)]
+      (toposort* n dag sorted temporary visited))
+    (swap! visited conj node)
+    (swap! sorted conj node)))
 
-(defn find-by-ns [db ns]
-  (when-let [e (:e (first (d/datoms db :avet :fiddle/ns ns)))]
-    (dissoc (into {} (d/touch (d/entity db e))) :db/id)))
+(defn toposort [node dag]
+  (let [sorted (atom [])]
+    (toposort* node dag sorted (atom #{}) (atom #{}))
+    @sorted))
 
-(def schema
-  [{:db/id #db/id[:db.part/db]
-    :db/ident :fiddle/ns
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db.install/_attribute :db.part/db}
-   
-   {:db/id #db/id[:db.part/db]
-    :db/ident :fiddle/cljs
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db.install/_attribute :db.part/db}
-   
-   {:db/id #db/id[:db.part/db]
-    :db/ident :fiddle/html
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db.install/_attribute :db.part/db}
+(defn dependencies 
+  "Returns the dependencies of ns in dependency order"
+  [db ns]
+  (butlast (toposort ns db)))
 
-   {:db/id #db/id[:db.part/db]
-    :db/ident :fiddle/css
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db.install/_attribute :db.part/db}])
+(defn sha-by-ns [db ns]
+  (ffirst (d/q '[:find ?sha
+                 :in $ ?ns
+                 :where
+                 [?e :cljsfiddle.src/ns ?ns]
+                 [?e :cljsfiddle.src/blob ?b]
+                 [?b :cljsfiddle.blob/sha ?sha]]
+               db ns)))
+
+(defn dependency-files 
+  [db ns]
+  (let [files (distinct
+               (for [ns (dependencies db ns)]
+                 (let [sha (sha-by-ns db ns)]
+                   (str sha ".js"))))
+        base (-> (d/entity db :goog/base)
+                 :cljsfiddle.src/blob
+                 :cljsfiddle.blob/sha)]
+    (cons (str base ".js") 
+          files)))
+
+(defn save-fiddle [conn fiddle]
+  (let [db (d/db conn)
+        tx (fiddle/fiddle-tx db fiddle)]
+    (if-not (empty? tx)
+      (:db-after @(d/transact conn tx))
+      db)))
+
+(defn find-fiddle-by-ns [db ns]
+  (let [query '[:find ?fiddle
+                :in $ ?ns
+                :where
+                [?src :cljsfiddle.src/ns ?ns]
+                [?fiddle :cljsfiddle/cljs ?src]]
+        fiddle-id (ffirst (d/q query db ns))]
+    (when fiddle-id
+      (d/touch (d/entity db fiddle-id)))))
 
 
-(comment ;; Testing
-  (def uri "datomic:mem://fiddles")
-  (def conn (do (d/delete-database uri)
-                (d/create-database uri)
-                (d/connect uri)))
+(comment 
+  (def db (-> :datomic-uri
+              env
+              d/connect
+              d/db))
+
+  (requires db "cljs.reader")
+
+  (dependencies db "cljs.core")
+
+  (:cljsfiddle.src/ns (:cljsfiddle/cljs (find-fiddle-by-ns db "foo.bar")))
   
-  (create conn schema)
-
-  (upsert conn
-          {:fiddle/ns "jonase.test"
-           :fiddle/cljs "cljs"
-           :fiddle/css "css code"
-           :fiddle/html "html code"})
-
-  (find-by-ns (d/db conn) "jonase.test")
-
   
-  
-  )
+  (util/fiddle "(ns foo.bar) (defn add [x y] (+ x y))"
+               "<html></html>"
+               "body {}"))
+

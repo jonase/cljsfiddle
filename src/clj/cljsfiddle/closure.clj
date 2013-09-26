@@ -3,10 +3,15 @@
             [clojure.string :as s]
             [clojure.set :as set]
             [clojure.edn :as edn]
+            [cljsfiddle.db :as db]
+            [cljsfiddle.db.util :refer [cljs-object-from-src]]
+            [cljsfiddle.db.src :as src]
             [cljs.closure :as cljs]
             [clojure.pprint :refer [pprint]]
+            [datomic.api :as d]
             [compojure.core :refer :all]
-            [alandipert.kahn :refer [kahn-sort]])
+            [alandipert.kahn :refer [kahn-sort]]
+            [environ.core :refer (env)])
   (:import [clojure.lang LineNumberingPushbackReader]
            [java.util.logging Level]
            [java.io StringReader BufferedReader]
@@ -15,6 +20,7 @@
                                          CompilerOptions
                                          CompilationLevel
                                          ClosureCodingConvention]))
+
 
 ;; 1 day(s)
 (def max-age (str "max-age=" (* 60 60 24 1)))
@@ -38,45 +44,8 @@
 
 (defn compile-cljs* [cljs-src-str]
   (let [cljs-src (read-all cljs-src-str)
-        js-src (cljs/-compile cljs-src {})
-        {:keys [provides requires]} (-> js-src StringReader. BufferedReader. line-seq cljs/parse-js-ns)]
-    {:js-src js-src
-     :provides (set provides)
-     :requires (set requires)}))
-
-(defn find-files [paths jars]
-  (filter (fn [file]
-            (and (some #(.startsWith file %) paths)
-                 (some #(.endsWith file %) [".js" ".cljs"])))
-          (mapcat cljs/jar-entry-names*
-                  jars)))
-
-(defn cljs-file? [file]
-  (.endsWith file ".cljs"))
-
-(defn build-index [paths jars]
-  (let [files (find-files paths jars)]
-    (apply merge
-           (mapcat (fn [file] 
-                     (let [{:keys [provides requires]} (if (cljs-file? file)
-                                                         (compile-cljs* (slurp (io/resource file)))
-                                                         (cljs/parse-js-ns (line-seq (io/reader (io/resource file)))))]
-                       (for [provide provides]
-                         {provide {:requires (set requires)
-                                   :file file}})))
-                   files))))
-
-;; Build an index searching through all jars on classpath
-(def deps-index (build-index #{"cljs/" "clojure/" "goog/" "domina"} 
-                             (filter #(.endsWith % ".jar") 
-                                     (-> "java.class.path" System/getProperty (s/split #":")))))
-
-(defn ns-file [ns index]
-  (get-in index [ns :file]))
-
-(defn ns-requires [ns index]
-  (get-in index [ns :requires]))
-
+        js-src (cljs/-compile cljs-src {})]
+    js-src))
 
 (defn js-errors [error]
   {:description (.description error)
@@ -111,53 +80,97 @@
 
 (def closure-compile (make-compiler {:optimizations :whitespace}))
 
-(defn compile-namespace* [ns index]
-  (let [file (ns-file ns index)]
-    (closure-compile 
-     file
-     (if (cljs-file? file)
-       (:js-src (compile-cljs* (slurp (io/resource file))))
-       (slurp (io/resource file))))))
+(defn compile-routes [conn]
+  (routes
+   (POST "/compile"
+     {{cljs-src-str :src} :params}
+     (let [db (d/db conn) 
+           cljs-obj (cljs-object-from-src cljs-src-str)
+           cljs-tx (src/cljs-tx db cljs-obj)
+           tdb (:db-after (d/with db (:tx cljs-tx)))
+           deps (db/dependency-files tdb (:ns cljs-obj))
+           js-src-obj (closure-compile (compile-cljs* cljs-src-str))
+           js-src-obj (assoc js-src-obj :dependencies deps)]
+       (let [resp (edn-response js-src-obj)] 
+         resp)))))
 
-(defn deps [namespace index]
-  (let [requires (set (ns-requires namespace index))]
-    (let [transitive-requires (when (seq requires)
-                                (set (mapcat #(deps % index) requires)))]
-      (set/union requires transitive-requires))))
+;(compile-cljs* " \n\n(defn adsd [x y] (+ x y))")
 
-(defn dependencies* [root index]
-  (let [keys (conj (deps root index) root)
-        prep (into {}
-                   (map (fn [[ns {r :requires}]]
-                          [ns r])
-                        (select-keys index keys)))
-        nss (rseq (kahn-sort prep))]
-    (vec (distinct (map #(get-in index [% :file]) nss)))))
+(defn deps-routes [conn]
+  (routes
+   
+   (GET "/:version/:file"
+    [version file]
+    (let [sha (first (s/split file #"\."))
+          [type src] (first 
+                      (d/q '[:find ?typename ?text
+                             :in $ ?sha
+                             :where
+                             [?blob :cljsfiddle.blob/sha ?sha]
+                             [?blob :cljsfiddle.blob/text ?text]
+                             [?src  :cljsfiddle.src/blob ?blob]
+                             [?src :cljsfiddle.src/type ?type]
+                             [?type :db/ident ?typename]]
+                           (d/db conn) sha))]
+      (when (and type src)
+        (let [csrc (condp = type
+                     :cljsfiddle.src.type/cljs (:js-src (closure-compile (compile-cljs* src)))
+                     :cljsfiddle.src.type/js (:js-src (closure-compile src)))]
+          (spit (str "resources/jscache/" version "/" file) csrc) 
+          {:status 200
+           :headers {"Content-Type" "application/javascript"}
+           :body csrc}))))))
 
-(defn compile-cljs
-  ([src] (compile-cljs src deps-index))
-  ([src index] 
-     (let [{:keys [js-src provides requires] :as res} (compile-cljs* src)
-           provides (first provides)
-           new-index (assoc index provides {:requires requires})]
-       (assoc res
-         :dependencies (butlast (dependencies* provides new-index))))))
+(comment
+  (def conn (-> :datomic-uri
+                env
+                d/connect))
 
-(def dependencies (memoize #(dependencies* % deps-index)))
-(def compile-namespace (memoize #(compile-namespace* % deps-index)))
+  (def db (-> :datomic-uri
+              env
+              d/connect
+              d/db))
 
-(defn compile-file [file]
+  (d/q '[:find (sample 2 ?sha) 
+         :where
+         [?src :cljsfiddle.src/type :cljsfiddle.src.type/cljs]
+         [?src :cljsfiddle.src/blob ?blob]
+         [?blob :cljsfiddle.blob/sha ?sha]]
+       db)
+  
+  (defn fffirst [coll]
+    (first (ffirst coll)))
+
+  
   (closure-compile 
-   file
-   (if (cljs-file? file)
-     (:js-src (compile-cljs* (slurp (io/resource file))))
-     (slurp (io/resource file)))))
+   (fffirst (d/q '[:find (sample 1 ?src-txt)
+                  :where 
+                  [?src :cljsfiddle.src/type :cljsfiddle.src.type/js]
+                  [?src :cljsfiddle.src/blob ?blob]
+                  [?blob :cljsfiddle.blob/text ?src-txt]]
+                db)))
 
-;; Routes
-(defroutes compiler-routes
-  (POST "/compile"
-     [data]
-     ;; TODO :src -> :cljs
-     (let [cljs-src-str (:src (edn/read-string data))]
-       (edn-response (compile-cljs cljs-src-str)))))
+  (use 'clojure.pprint)
+  (pprint
+   (src/cljs-tx
+    db
+    (cljs-object-from-src "(+ 1 2 3)")))
+  
+  (d/touch (d/entity db 17592186045492))
+
+  (first (seq (d/datoms db :avet :cljsfiddle.src/ns nil)))
+
+
+  (d/q '[:find ?typename ?text
+         :in $ ?sha
+         :where
+         [?blob :cljsfiddle.blob/sha ?sha]
+         [?blob :cljsfiddle.blob/text ?text]
+         [?src  :cljsfiddle.src/blob ?blob]
+         [?src :cljsfiddle.src/type ?type]
+         [?type :db/ident ?typename]]
+       db "5773e8ca4100bda76ebcb213f28e83bd7b4d14ee") 
+  
+  )
+
 

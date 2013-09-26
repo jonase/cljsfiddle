@@ -2,14 +2,18 @@
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as s]
+            [clojure.instant :as inst]
             [clojure.core.match :refer (match)]
             [cljsfiddle.views :as views]
             [cljsfiddle.closure :as closure]
             [cljsfiddle.db :as db]
+            [cljsfiddle.db.util :as util]
             [datomic.api :as d]
             [ring.adapter.jetty :as jetty]
             [ring.util.response :as res]
             [ring.middleware.session.cookie :as cookie]
+            [ring.middleware.stacktrace :refer (wrap-stacktrace)]
+            [ring.middleware.edn :refer (wrap-edn-params)]
             [compojure.core :refer :all] 
             [compojure.handler :as handler]
             [compojure.route :as route]
@@ -57,6 +61,14 @@
     (catch Exception e
       [:exception (.getMessage e)])))
 
+(defn as-of* 
+  "Get the db date or latest db if date is nil"
+  [conn date]
+  (let [db (d/db conn)]
+    (if date
+      (d/as-of db date)
+      db)))
+
 (defn app-routes [conn]
   (routes
    (GET "/"
@@ -68,29 +80,59 @@
    
    (GET "/fiddle/:ns"
      {{:keys [username] :as session} :session
-      {:keys [ns]} :params}
-     (when-let [fiddle (db/find-by-ns (d/db conn) ns)]
-       (assoc {:headers {"Content-Type" "text/html"}
-               :status 200
-               :body (html5 (views/main-view fiddle username))}
-         :session (merge session
-                         {:fiddle ns}))))
+      {:keys [ns as-of]} :params}
+     (let [date (try (inst/read-instant-date as-of)
+                     (catch Exception e))
+           db (as-of* conn date)]
+       (when-let [fiddle (db/find-fiddle-by-ns db ns)]
+         (assoc {:headers {"Content-Type" "text/html"}
+                 :status 200
+                 :body (html5 (views/main-view fiddle username))}
+           :session (merge session
+                           {:fiddle ns})))))
+   
+   (GET "/view/:ns"
+     {{:keys [ns as-of]} :params}
+     (let [date (try (inst/read-instant-date as-of)
+                  (catch Exception e))
+           db (as-of* conn date)]
+      (when-let [fiddle (db/find-fiddle-by-ns db ns)]
+        (let [deps (db/dependency-files db ns)]
+         {:headers {"Content-Type" "text/html"}
+          :status 200
+          :body (html5 (views/html-view ns fiddle deps))}))))
 
    (POST "/save"
-     {{:keys [data]} :params
+     {fiddle :params
       {:keys [username]} :session}
-     (let [fiddle (edn/read-string data)]
-       (edn-response
-        (match [username (parse-ns-form (:fiddle/cljs fiddle))]
-          [nil _] {:status :fail :msg "Login to save your work."}
-          [_ [:fail msg]] {:status :fail :msg msg}
-          [_ [:exception msg]] {:status :exception :msg msg}
-          [_ [:ok ns]] (if (= username (first (s/split ns #"\.")))
-                         (do (db/upsert conn (assoc fiddle :fiddle/ns ns))
-                             {:status :success})
-                         {:status :fail
-                          :msg (str "Can't save <strong> " ns "</strong>. Prefix the ns with your username.")})))))
-   
+     (edn-response
+      (match [username (parse-ns-form (:cljs fiddle))]
+        [nil _] {:status :fail :msg "Login to save your work."}
+        [_ [:fail msg]] {:status :fail :msg msg}
+        [_ [:exception msg]] {:status :exception :msg msg}
+        [_ [:ok ns]] (if (= username (first (s/split ns #"\.")))
+                       (let [db (db/save-fiddle conn
+                                                (util/fiddle (:cljs fiddle)
+                                                             (:html fiddle)
+                                                             (:css  fiddle)))] 
+                         {:status :success
+                          :date (subs (->> db d/basis-t d/t->tx (d/entity db) :db/txInstant pr-str)
+                                      7 36)
+                          :ns ns})
+                       {:status :fail
+                        :msg (str "Can't save <strong> " ns 
+                                  "</strong>. Prefix the ns with your username.")}))))
+      
+   ;; TODO: this can be done with nginx try_files
+   (GET "/jscache/:version/:file"
+     [version file]
+     (let [fp (str "/jscache/" version "/" file)
+           fr (res/file-response fp {:root "resources"})]
+       (if fr
+         (res/header fr "Cache-Control" (str "max-age=" (* 60 60 24 365)))
+         (do (println "Cache miss:" fp)
+             (res/redirect (str "/deps/" version "/" file))))))
+
    (GET "/oauth_login"
      {{:keys [code]} :params session :session}
      (if code
@@ -106,7 +148,8 @@
      []
      (assoc (res/redirect "/") :session nil))
    
-   (context "/compiler" [] closure/compiler-routes)
+   (context "/compiler" [] (closure/compile-routes conn))
+   (context "/deps" [] (closure/deps-routes conn))
    
    (route/resources "/")
    (route/not-found "Not Found")))
@@ -118,13 +161,14 @@
 (defn -main []
   (let [port (Integer/parseInt (or (env "PORT") "8080"))
         store (cookie/cookie-store {:key (env :session-secret)})
-        db-uri "datomic:mem://cljsfiddle"
-        conn (do (d/delete-database db-uri)
-                 (d/create-database db-uri)
-                 (d/connect db-uri))]
-    (db/create conn db/schema)
-    (jetty/run-jetty (app conn store) {:port port :join? false})))
+        db-uri (env :datomic-uri)
+        conn (d/connect db-uri)]
+    (jetty/run-jetty (-> (app conn store)
+                         wrap-edn-params
+                         wrap-stacktrace) 
+                     {:port port :join? false})))
 
 ;; (.stop server)
 ;; (def server (-main))
+
 
