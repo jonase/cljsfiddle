@@ -25,14 +25,17 @@
 (defn sha [s]
   (DigestUtils/shaHex s))
 
+(defn parse-js-ns [js-src]
+  (-> js-src 
+      StringReader. 
+      BufferedReader. 
+      line-seq 
+      cljs/parse-js-ns))
+
 (defn cljs-object-from-src [cljs-src-str]
   (let [cljs-src (read-all cljs-src-str)
         js-src (cljs/-compile cljs-src {}) ;; TODO perf.
-        {:keys [provides requires]} (-> js-src 
-                                        StringReader. 
-                                        BufferedReader. 
-                                        line-seq 
-                                        cljs/parse-js-ns)]
+        {:keys [provides requires]} (parse-js-ns js-src)]
     {:src cljs-src-str
      :js-src js-src
      :sha (sha cljs-src-str)
@@ -47,11 +50,7 @@
 
 (defn js-object-from-file [js-file]
   (let [js-src-str (slurp (io/resource js-file))
-        {:keys [provides requires]} (-> js-src-str 
-                                        StringReader. 
-                                        BufferedReader. 
-                                        line-seq 
-                                        cljs/parse-js-ns)]
+        {:keys [provides requires]} (parse-js-ns js-src-str)]
     {:file js-file
      :src js-src-str
      :sha (sha js-src-str)

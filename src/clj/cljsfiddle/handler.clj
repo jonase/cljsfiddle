@@ -123,14 +123,18 @@
         [_ [:fail msg]] {:status :fail :msg msg}
         [_ [:exception msg]] {:status :exception :msg msg}
         [_ [:ok ns]] (if (= username (first (s/split ns #"\.")))
-                       (let [db (db/save-fiddle conn
-                                                (util/fiddle (:cljs fiddle)
-                                                             (:html fiddle)
-                                                             (:css  fiddle)))] 
-                         {:status :success
-                          :date (subs (->> db d/basis-t d/t->tx (d/entity db) :db/txInstant pr-str)
-                                      7 36)
-                          :ns ns})
+                       (try
+                         (let [db (db/save-fiddle conn
+                                                  (util/fiddle (:cljs fiddle)
+                                                               (:html fiddle)
+                                                               (:css  fiddle)))] 
+                           {:status :success
+                            :date (subs (->> db d/basis-t d/t->tx (d/entity db) :db/txInstant pr-str)
+                                        7 36)
+                            :ns ns})
+                         (catch Exception e
+                           {:status :exception
+                             :msg (.getMessage e)}))
                        {:status :fail
                         :msg (str "Can't save <strong> " ns 
                                   "</strong>. Prefix the ns with your username.")}))))

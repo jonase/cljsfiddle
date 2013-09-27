@@ -71,15 +71,19 @@
   (routes
    (POST "/compile"
      {{cljs-src-str :src} :params}
-     (let [db (d/db conn) 
-           cljs-obj (cljs-object-from-src cljs-src-str)
-           cljs-tx (src/cljs-tx db cljs-obj)
-           tdb (:db-after (d/with db (:tx cljs-tx)))
-           deps (db/dependency-files tdb (:ns cljs-obj))
-           js-src-obj (closure-compile (:js-src cljs-obj))
-           js-src-obj (assoc js-src-obj :dependencies deps)]
-       (let [resp (edn-response js-src-obj)] 
-         resp)))))
+     (try
+       (let [db (d/db conn) 
+             cljs-obj (cljs-object-from-src cljs-src-str)
+             cljs-tx (src/cljs-tx db cljs-obj)
+             tdb (:db-after (d/with db (:tx cljs-tx)))
+             deps (db/dependency-files tdb (:ns cljs-obj))
+             js-src-obj (closure-compile (:js-src cljs-obj))
+             js-src-obj (assoc js-src-obj :dependencies deps :status :ok)]
+         (edn-response js-src-obj))
+       (catch Exception e
+         (edn-response
+          {:status :exception
+           :msg (.getMessage e)}))))))
 
 ;(compile-cljs* " \n\n(defn adsd [x y] (+ x y))")
 

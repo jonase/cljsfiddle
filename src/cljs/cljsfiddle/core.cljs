@@ -57,11 +57,15 @@
                         {:params {:src (.getValue cljs-editor)}
                          :handler (fn [res]
                                     (dom/remove-class! run-btn "disabled")
-                                    (let [srcdoc (make-srcdoc (.getValue html-editor)
-                                                              (.getValue css-editor)
-                                                              (:js-src res)
-                                                              (:dependencies res))]
-                                      (.setAttribute result-frame "srcdoc" srcdoc)))})))
+                                    (condp = (:status res)
+                                      :ok
+                                      (let [srcdoc (make-srcdoc (.getValue html-editor)
+                                                                (.getValue css-editor)
+                                                                (:js-src res)
+                                                                (:dependencies res))]
+                                        (.setAttribute result-frame "srcdoc" srcdoc))
+                                      :exception
+                                      (alert-error (:msg res))))})))
     (events/listen! save-btn :click
                     (fn [e]
                       (dom/add-class! save-btn "disabled")
