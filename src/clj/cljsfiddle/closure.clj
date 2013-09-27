@@ -10,7 +10,6 @@
             [clojure.pprint :refer [pprint]]
             [datomic.api :as d]
             [compojure.core :refer :all]
-            [alandipert.kahn :refer [kahn-sort]]
             [environ.core :refer (env)])
   (:import [clojure.lang LineNumberingPushbackReader]
            [java.util.logging Level]
