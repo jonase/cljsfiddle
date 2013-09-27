@@ -105,6 +105,15 @@
       :status 200
       :body (html5 (views/about-view username))})
 
+   (GET "/user/:user"
+     {{:keys [user]} :params
+      {:keys [username]} :session}
+     (when true #_(= username user)
+       (let [fiddles (db/fiddles-by-user (d/db conn) user)]
+        {:headers {"Content-Type" "text/html"}
+         :status 200
+         :body (html5 (views/user-view username fiddles))})))
+
    (POST "/save"
      {fiddle :params
       {:keys [username]} :session}

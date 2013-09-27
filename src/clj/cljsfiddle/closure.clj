@@ -4,7 +4,7 @@
             [clojure.set :as set]
             [clojure.edn :as edn]
             [cljsfiddle.db :as db]
-            [cljsfiddle.db.util :refer [cljs-object-from-src]]
+            [cljsfiddle.db.util :refer [cljs-object-from-src read-all]]
             [cljsfiddle.db.src :as src]
             [cljs.closure :as cljs]
             [clojure.pprint :refer [pprint]]
@@ -29,18 +29,6 @@
   {:status 200
    :headers {"Content-Type" "application/edn"}
    :body (pr-str edn-data)})
-
-(defn- read-all* [^LineNumberingPushbackReader reader result eof]
-  (let [form (read reader false eof)]
-    (if (= form eof)
-      result
-      (recur reader (conj result form) eof))))
-
-(defn- read-all [src]
-  (binding [*read-eval* false]
-    (read-all* (LineNumberingPushbackReader. (StringReader. src))
-               []
-               (Object.))))
 
 (defn compile-cljs* [cljs-src-str]
   (let [cljs-src (read-all cljs-src-str)
@@ -89,7 +77,7 @@
            cljs-tx (src/cljs-tx db cljs-obj)
            tdb (:db-after (d/with db (:tx cljs-tx)))
            deps (db/dependency-files tdb (:ns cljs-obj))
-           js-src-obj (closure-compile (compile-cljs* cljs-src-str))
+           js-src-obj (closure-compile (:js-src cljs-obj))
            js-src-obj (assoc js-src-obj :dependencies deps)]
        (let [resp (edn-response js-src-obj)] 
          resp)))))
@@ -98,7 +86,6 @@
 
 (defn deps-routes [conn]
   (routes
-   
    (GET "/:version/:file"
     [version file]
     (let [sha (first (s/split file #"\."))

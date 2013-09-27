@@ -16,7 +16,7 @@
       result
       (recur reader (conj result form) eof))))
 
-(defn- read-all [src]
+(defn read-all [src]
   (binding [*read-eval* false]
     (read-all* (LineNumberingPushbackReader. (StringReader. src))
                []
@@ -34,6 +34,7 @@
                                         line-seq 
                                         cljs/parse-js-ns)]
     {:src cljs-src-str
+     :js-src js-src
      :sha (sha cljs-src-str)
      :ns (first provides)
      :requires (set requires)}))
@@ -64,7 +65,6 @@
 (defn html-object-from-src [html-src]
   {:src html-src
    :sha (sha html-src)})
-
 
 (defn fiddle [cljs html css]
   {:cljs (cljs-object-from-src cljs)

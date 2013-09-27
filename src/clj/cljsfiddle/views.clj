@@ -44,7 +44,7 @@
           [:ul.nav.navbar-nav
            [:li [:button#run-btn.btn.btn-default.navbar-btn {:type "button"} "Run"] "&nbsp;"]
            [:li [:button#save-btn.btn.btn-default.navbar-btn {:type "button"} "Save"] "&nbsp;"]
-           [:li [:a {:href "/recent"} "Recent"]]
+           (when user [:li [:a {:href (str "/user/" user)} "My namespaces"]])
            [:li [:a {:href "/about"} "About"]]]
           [:ul.nav.navbar-nav.navbar-right
            [:li (if user 
@@ -129,4 +129,14 @@
              [:li "Append the url with " [:span {:style "font-family:monospace"} "?as-of=&lt;some-date&gt;"] 
               " for older versions and permalinks."]
              [:li "The date format is the same as clojure instant literals (without the #inst part): 2013-09-29 or 2013-10-02T13:15:01 "]]]]]]))
+
+(defn user-view [user fiddles]
+  (base user
+        [:div.row
+         [:div.col-lg-12
+          [:h3 "User: " user]
+          [:ul
+           (for [[ns date] (reverse (sort-by second fiddles))]
+             [:li (subs (pr-str date) 7 26) " " [:a {:href (str "/fiddle/" ns)} ns]
+              " | " [:a {:href (str "/view/" ns)} "HTML view"]])]]]))
 

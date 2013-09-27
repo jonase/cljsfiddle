@@ -70,6 +70,18 @@
     (when fiddle-id
       (d/touch (d/entity db fiddle-id)))))
 
+(defn fiddles-by-user [db user]
+  (let [query '[:find ?ns ?inst
+                :in $ ?user [?filetype ...]
+                :where
+                [?src :cljsfiddle.src/ns ?ns]
+                [(.startsWith ?ns ?user)]
+                [?fiddle :cljsfiddle/cljs ?src]
+                [?fiddle ?filetype ?src]
+                [?src :cljsfiddle.src/blob ?blob]
+                [?blob :cljsfiddle.blob/sha _ ?tx]
+                [?tx :db/txInstant ?inst]]]
+    (d/q query db user [:cljsfiddle/cljs :cljsfiddle/html :cljsfiddle/css])))
 
 (comment 
   (def db (-> :datomic-uri
