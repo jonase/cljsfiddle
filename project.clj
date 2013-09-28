@@ -3,9 +3,10 @@
   :url "http://cljsfiddle.net"
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-1853"]
-                 #_[org.clojure/clojurescript "0.0-1878"] 
-                 [org.clojure/core.match "0.2.0-rc5"]
-                 [org.clojure/core.async "0.1.222.0-83d0c2-alpha"]
+                 #_[org.clojure/clojurescript "0.0-1896"]
+                 #_[org.clojure/clojurescript "0.0-1909"] 
+                 [org.clojure/core.match "0.2.0"]
+                 [org.clojure/core.async "0.1.242.0-44b1e3-alpha"]
                  [org.clojure/core.logic "0.8.4"]
                  [com.datomic/datomic-free "0.8.4138"]
                  [ring/ring-jetty-adapter "1.2.0"]
