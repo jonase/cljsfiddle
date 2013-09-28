@@ -4,7 +4,8 @@
             [domina.css :as css]
             [domina.events :as events]
             [hylla.remote :as remote]
-            [ajax.core :as http]))
+            [ajax.core :as http]
+            [hiccups.runtime :refer (render-html)]))
 
 (defn ends-with? [string suffix]
   (not= -1 (.indexOf string suffix (- (.-length string) (.-length suffix)))))
@@ -13,22 +14,33 @@
   (.fromTextArea js/CodeMirror (dom/by-id id) (clj->js opts)))
 
 (defn make-deps [deps]
-  (apply str "<script>CLOSURE_NO_DEPS=true;</script><script>COMPILED=true</script>"
-         (for [dep deps]
-           (format "<script src=\"/jscache/1/%s\"></script>" (s/replace dep ".cljs" ".js")))))
+  (let [html [[:script "CLOSURE_NO_DEPS=true;"]
+              [:script "COMPILED=true;"]]
+        ds (for [dep deps]
+             [:script {:src (str "/jscache/1/" (s/replace dep ".cljs" ".js"))}])]
+    (apply str (map render-html (concat html ds)))))
 
 (defn make-srcdoc [html css js deps]
-  (format "<html><head><style>%s</style></head><body>%s</body>%s<script>%s</script></html>" 
-          css 
-          html 
-          (make-deps deps)
-          js))
+  (render-html
+   [:html
+    [:head
+     [:style css]]
+    [:body
+     html
+     (make-deps deps)
+     [:script js]]]))
 
 (defn alert [type msg]
   (let [loc (dom/by-id "alert")]
     (dom/destroy-children! loc)
     (dom/append! loc
-                 (format "<div class=\"alert alert-%s fade_in\">%s<a class=\"close\" data-dismiss=\"alert\" href=\"#\" aria-hidden=\"true\">&times;</a></div>" type msg))))
+                 (render-html
+                  [:div {:class (str "alert alert-" type " fade in")}
+                   msg
+                   [:a.close {:data-dismiss "alert"
+                              :href "#"
+                              :aria-hidden "true"}
+                    "&times;"]]))))
 
 (defn alert-success [msg]
   (alert "success" msg))
@@ -76,9 +88,7 @@
                          :handler (fn [res]
                                     (dom/remove-class! save-btn "disabled")
                                     (if (= (:status res) :success)
-                                       (alert-success (format "Fiddle saved successfully! 
-                                                               <a href=\"/view/%s?as-of=%s\">[permalink to view]</a>" 
-                                                              (:ns res) (:date res)))
+                                       (alert-success "Fiddle saved successfully!")
                                        (alert-error (:msg res))))})))
 
     (.on (js/$ "a[data-toggle=\"tab\"]") 
