@@ -73,4 +73,10 @@
     :db/ident :cljsfiddle/css
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/one
+    :db.install/_attribute :db.part/db}
+   
+   {:db/id (d/tempid :db.part/db)
+    :db/ident :cljsfiddle/updated
+    :db/valueType :db.type/instant
+    :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}])

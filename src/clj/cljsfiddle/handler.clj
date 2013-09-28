@@ -52,7 +52,7 @@
                (= 'ns (first form))
                (symbol? (second form)))
         [:ok (name (second form))]
-        [:fail form]))
+        [:fail (str "Not a ns form: " (pr-str form))]))
     (catch Exception e
       [:exception (.getMessage e)])))
 

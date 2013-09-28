@@ -61,6 +61,7 @@
       tx)))
 
 ;; Import cljs and js deps. Idempotent
+;; TODO: Figure out if schema is installed.
 (defn -main [uri]
   (let [conn (d/connect uri)
         files (find-files #{"cljs/" "clojure/" "goog/" "domina" "hiccups" "dommy"}
@@ -144,5 +145,5 @@
 
   (pprint (d/touch (:cljsfiddle.src/blob (d/entity (d/db conn) :goog/base))))
 
-  (d/entity (d/db conn) :cljsfiddle/default-fiddle)
+  (d/touch (d/entity (d/db conn) :cljsfiddle/default-fiddle))
   )
