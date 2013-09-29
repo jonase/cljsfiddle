@@ -31,6 +31,8 @@
     [:script {:src "/js/codemirror.js"}]
     [:script {:src "/js/mode/clojure/clojure.js"}]
     [:script {:src "/js/mode/css/css.js"}]
+    [:script {:src "/js/addon/edit/matchbrackets.js"}]
+    [:script {:src "/js/addon/edit/closebrackets.js"}]
     [:script {:src "/js/app.js"}]
     [:script "cljsfiddle.core.init();"]]])
 

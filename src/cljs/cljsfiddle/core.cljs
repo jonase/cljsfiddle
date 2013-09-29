@@ -55,7 +55,10 @@
   
   (let [html-editor (code-mirror "html-editor" {:lineNumbers true})
         css-editor (code-mirror "css-editor" {:mode :css :lineNumbers true})
-        cljs-editor (code-mirror "cljs-editor" {:mode :clojure :lineNumbers true})
+        cljs-editor (code-mirror "cljs-editor" {:mode :clojure 
+                                                :lineNumbers true 
+                                                :autoCloseBrackets true 
+                                                :matchBrackets true})
         result-frame (domina/by-id "result-frame")
         run-btn (domina/by-id "run-btn")
         save-btn (domina/by-id "save-btn")]
