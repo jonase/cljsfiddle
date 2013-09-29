@@ -34,6 +34,7 @@ cljsfiddle.import=> @(d/transact conn schema)
 cljsfiddle.import=> ;; Quit the repl
 $ lein run -m cljsfiddle.import datomic:free://localhost:4334/cljsfiddle
 $ lein cljsbuild once
+$ mkdir -p resources/jscache/2
 $ lein run -m cljsfiddle.handler
 ```
 
