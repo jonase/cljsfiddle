@@ -2,9 +2,10 @@
   :description "CLJSFiddle"
   :url "http://cljsfiddle.net"
   :dependencies [[org.clojure/clojure "1.5.1"]
-                 [org.clojure/clojurescript "0.0-1853"]
+                 #_[org.clojure/clojurescript "0.0-1853"]
                  #_[org.clojure/clojurescript "0.0-1896"]
-                 #_[org.clojure/clojurescript "0.0-1909"] 
+                 [org.clojure/clojurescript "0.0-1909"] 
+                 [org.clojure/tools.reader "0.7.8"]
                  [org.clojure/core.match "0.2.0"]
                  [org.clojure/core.async "0.1.242.0-44b1e3-alpha"]
                  [org.clojure/core.logic "0.8.4"]
@@ -26,7 +27,7 @@
                  [cljs-ajax "0.2.0"]]
   :source-paths ["src/clj" "src/cljs"]
   :plugins [[lein-ring "0.8.6"]
-            [lein-cljsbuild "0.3.2"]]
+            [lein-cljsbuild "0.3.3"]]
 ;  :main cljsfiddle.handler
 ;  :uberjar-name "cljsfiddle-standalone.jar"
   :min-lein-version "2.0.0"

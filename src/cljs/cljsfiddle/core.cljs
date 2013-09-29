@@ -7,6 +7,8 @@
             [ajax.core :as http]
             [hiccups.runtime :refer (render-html)]))
 
+(def VERSION 2)
+
 (defn ends-with? [string suffix]
   (not= -1 (.indexOf string suffix (- (.-length string) (.-length suffix)))))
 
@@ -17,7 +19,7 @@
   (let [html [[:script "CLOSURE_NO_DEPS=true;"]
               [:script "COMPILED=true;"]]
         ds (for [dep deps]
-             [:script {:src (str "/jscache/1/" (s/replace dep ".cljs" ".js"))}])]
+             [:script {:src (str "/jscache/" VERSION "/" (s/replace dep ".cljs" ".js"))}])]
     (apply str (map render-html (concat html ds)))))
 
 (defn make-srcdoc [html css js deps]
