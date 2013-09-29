@@ -120,7 +120,7 @@
     [:script "CLOSURE_NO_DEPS=true;"]
     [:script "COMPILED=true;"]
     (for [dep deps]
-      [:script {:src (str "/jscache/1/" dep)}])
+      [:script {:src (str "/jscache/2/" dep)}])
     [:script
      (-> fiddle
           :cljsfiddle/cljs
