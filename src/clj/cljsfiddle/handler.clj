@@ -22,6 +22,12 @@
             [cheshire.core :as json]
             [hiccup.page :refer [html5]]))
 
+(assert (env :datomic-uri) "DATOMIC_URI environment variable not set")
+(assert (env :session-secret) "SESSION_SECRET environment variable not set")
+(assert (env :cljsfiddle-version) "CLJSFIDDLE_VERSION environment variable not set")
+(assert (env :github-client-id) "GITHUB_CLIENT_ID environment variable not set")
+(assert (env :github-client-secret "GITHUB_CLIENT_SECRET environment variable not set"))
+
 (defn edn-response [edn-data]
   {:status 200
    :headers {"Content-Type" "application/edn"}

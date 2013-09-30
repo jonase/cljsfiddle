@@ -7,29 +7,27 @@
             [ajax.core :as http]
             [hiccups.runtime :refer (render-html)]))
 
-(def VERSION 2)
-
 (defn ends-with? [string suffix]
   (not= -1 (.indexOf string suffix (- (.-length string) (.-length suffix)))))
 
 (defn code-mirror [id opts]
   (.fromTextArea js/CodeMirror (dom/by-id id) (clj->js opts)))
 
-(defn make-deps [deps]
+(defn make-deps [deps version]
   (let [html [[:script "CLOSURE_NO_DEPS=true;"]
               [:script "COMPILED=true;"]]
         ds (for [dep deps]
-             [:script {:src (str "/jscache/" VERSION "/" (s/replace dep ".cljs" ".js"))}])]
+             [:script {:src (str "/jscache/" version "/" (s/replace dep ".cljs" ".js"))}])]
     (apply str (map render-html (concat html ds)))))
 
-(defn make-srcdoc [html css js deps]
+(defn make-srcdoc [html css js deps version]
   (render-html
    [:html
     [:head
      [:style css]]
     [:body
      html
-     (make-deps deps)
+     (make-deps deps version)
      [:script js]]]))
 
 (defn alert [type msg]
@@ -51,7 +49,7 @@
   (alert "danger" msg))
 
 (defn ^:export init
-  [] 
+  [version] 
   
   (let [html-editor (code-mirror "html-editor" {:lineNumbers true})
         css-editor (code-mirror "css-editor" {:mode :css :lineNumbers true})
@@ -79,7 +77,8 @@
                                       (let [srcdoc (make-srcdoc (.getValue html-editor)
                                                                 (.getValue css-editor)
                                                                 (:js-src res)
-                                                                (:dependencies res))]
+                                                                (:dependencies res)
+                                                                version)]
                                         (.setAttribute result-frame "srcdoc" srcdoc))
                                       :exception
                                       (alert-error (:msg res))))})))

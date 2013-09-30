@@ -3,7 +3,16 @@
             [environ.core :refer (env)]
             [cljsfiddle.closure :refer [compile-cljs*]]))
 
-(defn base [user & content] 
+(def google-analytics-script
+  "(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-9233187-2', 'cljsfiddle.net');
+  ga('send', 'pageview');")
+
+(defn base [nav & content] 
   [:html {:lang "en"}
    [:head
     [:title "CLJSFiddle"]
@@ -15,17 +24,10 @@
             :href "/css/codemirror.css"}]
     [:link {:rel "stylesheet"
             :href "/css/style.css"}]
-    [:script 
-     "(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-  ga('create', 'UA-9233187-2', 'cljsfiddle.net');
-  ga('send', 'pageview');"
-     ]]
+    [:script google-analytics-script]]
    [:body
-    [:div.container content]
+    nav
+    [:div.full-width-container content]
     [:script {:src "http://code.jquery.com/jquery.js"}]
     [:script {:src "//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"}]
     [:script {:src "/js/codemirror.js"}]
@@ -34,33 +36,29 @@
     [:script {:src "/js/addon/edit/matchbrackets.js"}]
     [:script {:src "/js/addon/edit/closebrackets.js"}]
     [:script {:src "/js/app.js"}]
-    [:script "cljsfiddle.core.init();"]]])
+    [:script "cljsfiddle.core.init(" (env :cljsfiddle-version) ");"]]])
 
 (def ^:private github-login-url (str "https://github.com/login/oauth/authorize?client_id=" (env :github-client-id)))
 
+
+(defn navbar [user & buttons]
+  [:nav.navbar.navbar-default.navbar-static-top {:role "navigation"}
+   [:div.navbar-header
+    [:a.navbar-brand {:href "/"} "CLJSFiddle"]]
+   [:ul.nav.navbar-nav
+    buttons
+    (when user [:li [:a {:href (str "/user/" user)} "My namespaces"]])
+    [:li [:a {:href "/about"} "About"]]]
+   [:ul.nav.navbar-nav.navbar-right
+    [:li (if user 
+           [:a {:href "/logout"} "Logout (" user ")"] 
+           [:a {:href github-login-url} "Login"])]]])
+
 (defn main-view 
   [fiddle user] 
-  (base user
-        [:nav.navbar.navbar-default {:role "navigation"}
-         [:div.navbar-header
-          [:button.navbar-toggle {:type "button"
-                                  :data-toggle "collapse"
-                                  :data-target ".navbar-ex1-collapse"}
-           [:span.sr-only "Toggle navigation"]
-           [:span.icon-bar]
-           [:span.icon-bar]
-           [:span.icon-bar]]
-          [:a.navbar-brand "CLJSFiddle"]]
-         [:div.collapse.navbar-collapse.navbar-ex1-collapse
-          [:ul.nav.navbar-nav
-           [:li [:button#run-btn.btn.btn-default.navbar-btn {:type "button"} "Run"] "&nbsp;"]
-           [:li [:button#save-btn.btn.btn-default.navbar-btn {:type "button"} "Save"] "&nbsp;"]
-           (when user [:li [:a {:href (str "/user/" user)} "My namespaces"]])
-           [:li [:a {:href "/about"} "About"]]]
-          [:ul.nav.navbar-nav.navbar-right
-           [:li (if user 
-                  [:a {:href "/logout"} "Logout (" user ")"] 
-                  [:a {:href github-login-url} "Login"])]]]]
+  (base (navbar user
+                [:li [:button#run-btn.btn.btn-default.navbar-btn {:type "button"} "Run"] "&nbsp;"]
+                [:li [:button#save-btn.btn.btn-default.navbar-btn {:type "button"} "Save"] "&nbsp;"])
         [:div.row
          [:div.col-lg-12
           [:div#alert]]]
@@ -103,15 +101,7 @@
                 :cljsfiddle/css
                 :cljsfiddle.src/blob
                 :cljsfiddle.blob/text)]
-    [:script 
-     "(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-  ga('create', 'UA-9233187-2', 'cljsfiddle.net');
-  ga('send', 'pageview');"
-     ]]
+    [:script google-analytics-script]]
    [:body
     (-> fiddle
         :cljsfiddle/html
@@ -120,7 +110,7 @@
     [:script "CLOSURE_NO_DEPS=true;"]
     [:script "COMPILED=true;"]
     (for [dep deps]
-      [:script {:src (str "/jscache/2/" dep)}])
+      [:script {:src (str "/jscache/" (env :cljsfiddle-version) "/" dep)}])
     [:script
      (-> fiddle
           :cljsfiddle/cljs
@@ -129,7 +119,7 @@
           compile-cljs*)]]])
 
 (defn about-view [user]
-  (base user
+  (base (navbar user)
         [:div.row
          [:div.col-lg-12
           [:h3 "About CLJSFiddle"]
@@ -151,7 +141,7 @@
              [:li "The date format is the same as clojure instant literals (without the #inst part): 2013-09-29 or 2013-10-02T13:15:01 "]]]]]]))
 
 (defn user-view [user fiddles]
-  (base user
+  (base (navbar user)
         [:div.row
          [:div.col-lg-12
           [:h3 "User: " user]
