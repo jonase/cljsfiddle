@@ -140,8 +140,8 @@
               " for older versions and permalinks."]
              [:li "The date format is the same as clojure instant literals (without the #inst part): 2013-09-29 or 2013-10-02T13:15:01 "]]]]]]))
 
-(defn user-view [user fiddles]
-  (base (navbar user)
+(defn user-view [logged-in-user user  fiddles]
+  (base (navbar logged-in-user)
         [:div.row
          [:div.col-lg-12
           [:h3 "User: " user]
