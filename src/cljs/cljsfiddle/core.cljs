@@ -28,7 +28,8 @@
     [:body
      html
      (make-deps deps version)
-     [:script js]]]))
+     [:script js]
+     [:script "parent.postMessage('hi', 'http://localhost:8080')"]]]))
 
 (defn alert [type msg]
   (let [loc (dom/by-id "alert")]
@@ -48,6 +49,37 @@
 (defn alert-error [msg]
   (alert "danger" msg))
 
+(def saved? (atom false))
+
+(defn toggle-saved! []
+  (let [btn (css/sel "#save-btn")
+        span (css/sel "#save-btn span")]
+    (dom/set-style! btn :background-color "lightgreen")
+    (dom/remove-class! span "glyphicon-floppy-save")
+    (dom/add-class! span "glyphicon-floppy-saved")))
+
+(defn toggle-not-saved! []
+  (let [btn (css/sel "#save-btn")
+        span (css/sel "#save-btn span")]
+    (dom/set-style! btn :background-color "white")
+    (dom/remove-class! span "glyphicon-floppy-saved")
+    (dom/add-class! span "glyphicon-floppy-save")))
+
+(defn editor-content-changed [e]
+  (when @saved?
+    (toggle-not-saved!)
+    (swap! saved? not)))
+
+(defn register-change-listeners [& editors]
+  (doseq [editor editors]
+    (.on editor "change" editor-content-changed)))
+
+(defn output-fn [editor]
+  (let [lines (atom [])]
+   (fn [msg]
+     (swap! lines conj msg)
+     (.setValue editor (s/join "\n" @lines)))))
+
 (defn ^:export init
   [version] 
   
@@ -56,14 +88,21 @@
         cljs-editor (code-mirror "cljs-editor" {:mode :clojure 
                                                 :lineNumbers true 
                                                 :autoCloseBrackets true 
-                                                :matchBrackets true})
+                                                :matchBrackets true
+                                                :cljsfiddleButtons true})
+        output-editor (code-mirror "output" {:lineNumbers true})
         result-frame (domina/by-id "result-frame")
         run-btn (domina/by-id "run-btn")
-        save-btn (domina/by-id "save-btn")]
+        save-btn (domina/by-id "save-btn")
+
+        output (output-fn output-editor)]
     
-    (.setSize cljs-editor "100%" "455px")
-    (.setSize html-editor "100%" "455px")
-    (.setSize css-editor  "100%" "455px")
+    (.setSize cljs-editor "100%" "510px")
+    (.setSize html-editor "100%" "510px")
+    (.setSize css-editor  "100%" "510px")
+    (.setSize output-editor "100%" "130px")
+
+    (set! (.-log js/console) (fn [msg] (output msg)))
 
     (events/listen! run-btn :click
                     (fn [e]
@@ -81,7 +120,7 @@
                                                                 version)]
                                         (.setAttribute result-frame "srcdoc" srcdoc))
                                       :exception
-                                      (alert-error (:msg res))))})))
+                                      (output (:msg res))))})))
     (events/listen! save-btn :click
                     (fn [e]
                       (dom/add-class! save-btn "disabled")
@@ -92,8 +131,10 @@
                          :handler (fn [res]
                                     (dom/remove-class! save-btn "disabled")
                                     (if (= (:status res) :success)
-                                       (alert-success "Fiddle saved successfully!")
-                                       (alert-error (:msg res))))})))
+                                      (do (reset! saved? true) 
+                                          (toggle-saved!)
+                                          (output "Message saved successfully!"))
+                                      (alert-error (:msg res))))})))
 
     (.on (js/$ "a[data-toggle=\"tab\"]") 
          "shown.bs.tab" 
@@ -101,4 +142,12 @@
            (condp = (dom/attr (.-target evt) :href)
              "#cljs-editor-tab" (.refresh cljs-editor)
              "#html-editor-tab" (.refresh html-editor)
-             "#css-editor-tab" (.refresh css-editor))))))
+             "#css-editor-tab" (.refresh css-editor))))
+
+    (register-change-listeners cljs-editor html-editor css-editor)
+
+    (.addEventListener js/document
+                       "message"
+                       (fn [x] 
+                         (.log js/console "HI")) 
+                       false)))

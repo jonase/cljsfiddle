@@ -28,13 +28,14 @@
    [:body
     nav
     [:div.full-width-container content]
-    [:script {:src "http://code.jquery.com/jquery.js"}]
+    [:script {:src "//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"}]
     [:script {:src "//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"}]
     [:script {:src "/js/codemirror.js"}]
     [:script {:src "/js/mode/clojure/clojure.js"}]
     [:script {:src "/js/mode/css/css.js"}]
     [:script {:src "/js/addon/edit/matchbrackets.js"}]
     [:script {:src "/js/addon/edit/closebrackets.js"}]
+    [:script {:src "/js/cljsfiddle.js"}]
     [:script {:src "/js/app.js"}]
     [:script "cljsfiddle.core.init(" (env :cljsfiddle-version) ");"]]])
 
@@ -56,14 +57,12 @@
 
 (defn main-view 
   [fiddle user] 
-  (base (navbar user
-                [:li [:button#run-btn.btn.btn-default.navbar-btn {:type "button"} "Run"] "&nbsp;"]
-                [:li [:button#save-btn.btn.btn-default.navbar-btn {:type "button"} "Save"] "&nbsp;"])
+  (base (navbar user)
         [:div.row
          [:div.col-lg-12
           [:div#alert]]]
         [:div.row
-         [:div.col-lg-6 [:ul.nav.nav-tabs
+         [:div.col-lg-6 [:ul#editor-tabs.nav.nav-tabs
                          [:li.active [:a {:href "#cljs-editor-tab" :data-toggle "tab"} "cljs"]]
                          [:li [:a {:href "#html-editor-tab" :data-toggle "tab"} "html"]]
                          [:li [:a {:href "#css-editor-tab" :data-toggle "tab"} "css"]]] 
@@ -80,14 +79,19 @@
                                                              :cljsfiddle.blob/text))]]
            [:div#css-editor-tab.tab-pane
             [:textarea#css-editor.tab-pane (escape-html (-> fiddle 
-                                                             :cljsfiddle/css
-                                                             :cljsfiddle.src/blob
-                                                             :cljsfiddle.blob/text))]]]]
-         [:div.col-lg-6 [:iframe#result-frame {:seamless "seamless"
-                                               :sandbox "allow-scripts"
-                                               :width "100%"
-                                               :style "border: 1px solid lightgray;height:500px;"}]]]
-        [:hr]
+                                                            :cljsfiddle/css
+                                                            :cljsfiddle.src/blob
+                                                            :cljsfiddle.blob/text))]]]]
+         [:div.col-lg-6 
+          [:div.row
+           [:div.col-lg-12
+            [:iframe#result-frame {:seamless "seamless"
+                                   :sandbox "allow-scripts"
+                                   :width "100%"
+                                   :style "border: 1px solid lightgray;height:400px;"}]] ]
+          [:div.row
+           [:div.col-lg-12 [:textarea#output]]]]]
+        
         [:div.row
          [:div.col-lg-12
           [:p.text-center {:style "margin-bottom: 10px;"} 
