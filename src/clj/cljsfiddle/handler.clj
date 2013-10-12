@@ -118,7 +118,7 @@
        (let [fiddles (db/fiddles-by-user (d/db conn) user)]
         {:headers {"Content-Type" "text/html"}
          :status 200
-         :body (html5 (views/user-view user fiddles))})))
+         :body (html5 (views/user-view username user fiddles))})))
 
    (POST "/save"
      {fiddle :params
