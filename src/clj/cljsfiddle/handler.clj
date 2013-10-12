@@ -20,7 +20,8 @@
             [environ.core :refer (env)]
             [clj-http.client :as http]
             [cheshire.core :as json]
-            [hiccup.page :refer [html5]]))
+            [hiccup.page :refer [html5]]
+            [taoensso.timbre :as log]))
 
 (assert (env :datomic-uri) "DATOMIC_URI environment variable not set")
 (assert (env :session-secret) "SESSION_SECRET environment variable not set")
@@ -125,25 +126,27 @@
       {:keys [username]} :session}
      (edn-response
       (match [username (parse-ns-form (:cljs fiddle))]
-        [nil _] {:status :fail :msg "Login to save your work."}
-        [_ [:fail msg]] {:status :fail :msg msg}
+        [nil _] {:status :save-fail :msg "Login to save your work."}
+        [_ [:fail msg]] {:status :save-fail :msg msg}
         [_ [:exception msg]] {:status :exception :msg msg}
-        [_ [:ok ns]] (if (= username (first (s/split ns #"\.")))
+        [_ [:ok ns]] (if (or (= username (first (s/split ns #"\.")))
+                             (and (= ns "cljsfiddle")
+                                  (= username "jonase")))
                        (try
                          (let [db (db/save-fiddle conn
                                                   (util/fiddle (:cljs fiddle)
                                                                (:html fiddle)
                                                                (:css  fiddle)))] 
-                           {:status :success
+                           {:status :save-success
                             :date (subs (->> db d/basis-t d/t->tx (d/entity db) :db/txInstant pr-str)
                                         7 36)
                             :ns ns})
                          (catch Exception e
                            {:status :exception
                              :msg (.getMessage e)}))
-                       {:status :fail
-                        :msg (str "Can't save <strong> " ns 
-                                  "</strong>. Prefix the ns with your username.")}))))
+                       {:status :save-fail
+                        :ns ns
+                        :user username}))))
       
    ;; TODO: this can be done with nginx try_files
    (GET "/jscache/:version/:file"
@@ -154,7 +157,7 @@
          (-> fr
              (res/header "Cache-Control" (str "max-age=" (* 60 60 24 365)))
              (res/header "Content-Type" "application/javascript"))
-         (do (println "Cache miss:" fp)
+         (do (log/info "Cache miss:" fp)
              (res/redirect (str "/deps/" version "/" file))))))
 
    (GET "/oauth_login"

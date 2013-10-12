@@ -7,6 +7,7 @@
             [cljsfiddle.db.util :refer [cljs-object-from-src read-all]]
             [cljsfiddle.db.src :as src]
             [cljs.closure :as cljs]
+            [taoensso.timbre :as log]
             [clojure.pprint :refer [pprint]]
             [datomic.api :as d]
             [compojure.core :refer :all]
@@ -80,10 +81,15 @@
              js-src-obj (closure-compile (:js-src cljs-obj))
              js-src-obj (assoc js-src-obj :dependencies deps :status :ok)]
          (edn-response js-src-obj))
-       (catch Exception e
+       (catch clojure.lang.ExceptionInfo e
          (edn-response
           {:status :exception
-           :msg (.getMessage e)}))))))
+           :msg (.getMessage e)}))
+       (catch Exception e
+         (log/error (.getMessage e))
+         (edn-response
+          {:status :exception
+           :msg "Something went terribly wrong."}))))))
 
 ;(compile-cljs* " \n\n(defn adsd [x y] (+ x y))")
 

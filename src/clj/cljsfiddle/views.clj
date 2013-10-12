@@ -62,10 +62,13 @@
          [:div.col-lg-12
           [:div#alert]]]
         [:div.row
-         [:div.col-lg-6 [:ul#editor-tabs.nav.nav-tabs
-                         [:li.active [:a {:href "#cljs-editor-tab" :data-toggle "tab"} "cljs"]]
-                         [:li [:a {:href "#html-editor-tab" :data-toggle "tab"} "html"]]
-                         [:li [:a {:href "#css-editor-tab" :data-toggle "tab"} "css"]]] 
+         [:div.col-lg-6 
+          
+          [:ul#editor-tabs.nav.nav-tabs
+           [:li.active [:a {:href "#cljs-editor-tab" :data-toggle "tab"} "cljs"]]
+           [:li [:a {:href "#html-editor-tab" :data-toggle "tab"} "html"]]
+           [:li [:a {:href "#css-editor-tab" :data-toggle "tab"} "css"]]] 
+          
           [:div.tab-content
            [:div#cljs-editor-tab.tab-pane.active
             [:textarea#cljs-editor.tab-pane.active (escape-html (-> fiddle 
@@ -81,18 +84,19 @@
             [:textarea#css-editor.tab-pane (escape-html (-> fiddle 
                                                             :cljsfiddle/css
                                                             :cljsfiddle.src/blob
-                                                            :cljsfiddle.blob/text))]]]]
+                                                            :cljsfiddle.blob/text))]]]
+
+          [:div#output {:style "height:100px;width:100%;border:1px solid lightgray;overflow:auto;padding-left:6px;padding-top:6px"}]]
+
          [:div.col-lg-6 
           [:div.row
            [:div.col-lg-12
             [:iframe#result-frame {:seamless "seamless"
                                    :sandbox "allow-scripts"
                                    :width "100%"
-                                   :style "border: 1px solid lightgray;height:400px;"}]] ]
-          [:div.row
-           [:div.col-lg-12 [:textarea#output]]]]]
+                                   :style "border: 1px solid lightgray;height:532px;"}]]]]]
         
-        [:div.row
+        [:div.row {:style "margin-top:20px;"}
          [:div.col-lg-12
           [:p.text-center {:style "margin-bottom: 10px;"} 
            [:a {:href "http://cljsfiddle.net"} "cljsfiddle.net"] " &copy; 2013 Jonas Enlund"]]]))

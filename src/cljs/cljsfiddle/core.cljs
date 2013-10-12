@@ -1,5 +1,6 @@
 (ns cljsfiddle.core
   (:require [clojure.string :as s]
+            [cljs.reader :as reader]
             [domina :as dom]
             [domina.css :as css]
             [domina.events :as events]
@@ -26,28 +27,12 @@
     [:head
      [:style css]]
     [:body
+     [:script "window.onerror = function(msg, url, line) { parent.postMessage('{:type :runtime-error}', '*'); return false;};"]
      html
      (make-deps deps version)
+     [:script "cljs.core.set_print_fn_BANG_.call(null,function(s){var s = s.replace(/\"/g, \"&quot;\"); parent.postMessage('{:type :runtime-print :to-print \"' + s + '\"}', '*');});"]
      [:script js]
-     [:script "parent.postMessage('hi', 'http://localhost:8080')"]]]))
-
-(defn alert [type msg]
-  (let [loc (dom/by-id "alert")]
-    (dom/destroy-children! loc)
-    (dom/append! loc
-                 (render-html
-                  [:div {:class (str "alert alert-" type " fade in")}
-                   msg
-                   [:a.close {:data-dismiss "alert"
-                              :href "#"
-                              :aria-hidden "true"}
-                    "&times;"]]))))
-
-(defn alert-success [msg]
-  (alert "success" msg))
-
-(defn alert-error [msg]
-  (alert "danger" msg))
+     ]]))
 
 (def saved? (atom false))
 
@@ -74,11 +59,56 @@
   (doseq [editor editors]
     (.on editor "change" editor-content-changed)))
 
-(defn output-fn [editor]
-  (let [lines (atom [])]
+(defmulti output-hiccup #(or (:type %) (:status %)))
+
+(defmethod output-hiccup :error [msg]
+  [:div 
+   [:span.glyphicon.glyphicon-warning-sign {:style "color:red"}] " " [:strong (:msg msg)]])
+
+(defmethod output-hiccup :log [msg]
+  [:div 
+   [:span.glyphicon.glyphicon-chevron-right] " " (:msg msg)])
+
+(defmethod output-hiccup :exception [msg]
+  (output-hiccup (assoc msg :type :error)))
+
+(defmethod output-hiccup :save-fail [msg]
+  (if-let [msg (:msg msg)]
+    [:div 
+     [:span.glyphicon.glyphicon-warning-sign {:style "color:red"}] " "
+     [:strong msg]]
+    [:div 
+     [:span.glyphicon.glyphicon-warning-sign {:style "color:red"}] 
+     " Can't save fiddle with namespace " [:strong (:ns msg)] 
+     ". Prefix the namespace with your username such as " [:strong (:user msg) "." (:ns msg)] "."]))
+
+(defmethod output-hiccup :save-success [data]
+  [:div 
+   [:span.glyphicon.glyphicon-floppy-saved {:style "color: green;"}] 
+   " Fiddle " [:strong (:ns data)] " saved successfully!"])
+
+(defmethod output-hiccup :runtime-error [data]
+  [:div 
+   [:span.glyphicon.glyphicon-warning-sign {:style "color: red;"}] 
+   [:strong " Runtime exception occured. Check your console logs for details."]])
+
+(defmethod output-hiccup :runtime-print [data]
+  [:div
+   [:span.glyphicon.glyphicon-chevron-right] 
+   " " (s/escape (:to-print data) {"<" "&lt;"
+                                   ">" "&gt;"})])
+
+(defn output-html [msg]
+  (render-html (output-hiccup msg)))
+
+(defn output-fn []
+  (let [out (dom/by-id "output")]
    (fn [msg]
-     (swap! lines conj msg)
-     (.setValue editor (s/join "\n" @lines)))))
+     (let [html (output-html msg)]
+       (dom/append! out html)
+       ;; Scroll to bottom
+       (set! (.-scrollTop out) (.-scrollHeight out))))))
+
 
 (defn ^:export init
   [version] 
@@ -90,20 +120,15 @@
                                                 :autoCloseBrackets true 
                                                 :matchBrackets true
                                                 :cljsfiddleButtons true})
-        output-editor (code-mirror "output" {:lineNumbers true})
         result-frame (domina/by-id "result-frame")
         run-btn (domina/by-id "run-btn")
         save-btn (domina/by-id "save-btn")
-
-        output (output-fn output-editor)]
+        output (output-fn)]
     
-    (.setSize cljs-editor "100%" "510px")
-    (.setSize html-editor "100%" "510px")
-    (.setSize css-editor  "100%" "510px")
-    (.setSize output-editor "100%" "130px")
-
-    (set! (.-log js/console) (fn [msg] (output msg)))
-
+    (.setSize cljs-editor "100%" "400px")
+    (.setSize html-editor "100%" "400px")
+    (.setSize css-editor  "100%" "400px")
+    
     (events/listen! run-btn :click
                     (fn [e]
                       (dom/add-class! run-btn "disabled")
@@ -119,8 +144,7 @@
                                                                 (:dependencies res)
                                                                 version)]
                                         (.setAttribute result-frame "srcdoc" srcdoc))
-                                      :exception
-                                      (output (:msg res))))})))
+                                      :exception (output res)))})))
     (events/listen! save-btn :click
                     (fn [e]
                       (dom/add-class! save-btn "disabled")
@@ -133,8 +157,8 @@
                                     (if (= (:status res) :success)
                                       (do (reset! saved? true) 
                                           (toggle-saved!)
-                                          (output "Message saved successfully!"))
-                                      (alert-error (:msg res))))})))
+                                          (output (assoc res :msg "Fiddle saved successfully!")))
+                                      (output res)))})))
 
     (.on (js/$ "a[data-toggle=\"tab\"]") 
          "shown.bs.tab" 
@@ -146,8 +170,7 @@
 
     (register-change-listeners cljs-editor html-editor css-editor)
 
-    (.addEventListener js/document
-                       "message"
-                       (fn [x] 
-                         (.log js/console "HI")) 
-                       false)))
+    (.addEventListener js/window "message" 
+                       (fn [evt]
+                         (.log js/console evt)
+                         (output (js->clj (reader/read-string (.-data evt))))))))

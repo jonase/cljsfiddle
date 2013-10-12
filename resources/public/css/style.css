@@ -31,7 +31,7 @@
 }
 
 #editor-tabs {
-    padding-left: 28px;
+    padding-left: 34px;
 }
 #editor-tabs > li > a {
     padding: 5px 12px;
@@ -41,3 +41,7 @@
     border: 1px solid lightgray;
     
 }*/
+
+.navbar {
+    margin-bottom: 8px;
+}

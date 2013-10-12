@@ -1,6 +1,7 @@
 (ns cljsfiddle.db.util
   (:require [clojure.string :as s]
             [clojure.java.io :as io]
+            [clojure.tools.reader :as reader]
             [datomic.api :as d]
             [cljs.closure :as cljs]
             [environ.core :refer (env)])
@@ -11,13 +12,13 @@
 (def tempid? map?)
 
 (defn- read-all* [^LineNumberingPushbackReader reader result eof]
-  (let [form (read reader false eof)]
+  (let [form (reader/read reader false eof)]
     (if (= form eof)
       result
       (recur reader (conj result form) eof))))
 
 (defn read-all [src]
-  (binding [*read-eval* false]
+  (binding [reader/*read-eval* false]
     (read-all* (LineNumberingPushbackReader. (StringReader. src))
                []
                (Object.))))

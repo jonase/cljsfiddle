@@ -21,6 +21,7 @@
                  [cheshire "5.2.0"]
                  [hiccup "1.0.4"]
                  [environ "0.4.0"]
+                 [com.taoensso/timbre "2.6.2"]
                  [hylla "0.1.0"]
                  [domina "1.0.1"]
                  [prismatic/dommy "0.1.2"]
