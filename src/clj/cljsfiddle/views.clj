@@ -35,7 +35,6 @@
     [:script {:src "/js/mode/css/css.js"}]
     [:script {:src "/js/addon/edit/matchbrackets.js"}]
     [:script {:src "/js/addon/edit/closebrackets.js"}]
-    [:script {:src "/js/cljsfiddle.js"}]
     [:script {:src "/js/app.js"}]
     [:script "cljsfiddle.core.init(" (env :cljsfiddle-version) ");"]]])
 
@@ -67,7 +66,14 @@
           [:ul#editor-tabs.nav.nav-tabs
            [:li.active [:a {:href "#cljs-editor-tab" :data-toggle "tab"} "cljs"]]
            [:li [:a {:href "#html-editor-tab" :data-toggle "tab"} "html"]]
-           [:li [:a {:href "#css-editor-tab" :data-toggle "tab"} "css"]]] 
+           [:li [:a {:href "#css-editor-tab" :data-toggle "tab"} "css"]]
+           [:span#cljsfiddle-buttons 
+            [:button#run-btn.btn.btn-default.btn-xs {:data-toggle "tooltip"
+                                                     :title "Compile & Run"} 
+             [:span.glyphicon.glyphicon-play]]
+            [:button#save-btn.btn.btn-default.btn-xs {:data-toggle "tooltip"
+                                                      :title "Save"} 
+             [:span.glyphicon.glyphicon-floppy-save]]]] 
           
           [:div.tab-content
            [:div#cljs-editor-tab.tab-pane.active
