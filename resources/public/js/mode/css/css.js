@@ -1,9 +1,7 @@
-CodeMirror.defineMode("css", function(config) {
-  return CodeMirror.getMode(config, "text/css");
-});
-
-CodeMirror.defineMode("css-base", function(config, parserConfig) {
+CodeMirror.defineMode("css", function(config, parserConfig) {
   "use strict";
+
+  if (!parserConfig.propertyKeywords) parserConfig = CodeMirror.resolveMode("text/css");
 
   var indentUnit = config.indentUnit,
       hooks = parserConfig.hooks || {},
@@ -39,7 +37,7 @@ CodeMirror.defineMode("css-base", function(config, parserConfig) {
       stream.match(/^\s*\w*/);
       return ret("keyword", "important");
     }
-    else if (/\d/.test(ch)) {
+    else if (/\d/.test(ch) || ch == "." && stream.eat(/\d/)) {
       stream.eatWhile(/[\w.%]/);
       return ret("number", "unit");
     }
@@ -277,16 +275,14 @@ CodeMirror.defineMode("css-base", function(config, parserConfig) {
           state.stack[state.stack.length-1] = "@mediaType";
           state.stack.push("@mediaType(");
         }
+        else state.stack.push("(");
       }
       else if (type == ")") {
-        if (context == "propertyValue" && state.stack[state.stack.length-2] == "@mediaType(") {
+        if (context == "propertyValue") {
           // In @mediaType( without closing ; after propertyValue
           state.stack.pop();
-          state.stack.pop();
         }
-        else if (context == "@mediaType(") {
-          state.stack.pop();
-        }
+        state.stack.pop();
       }
       else if (type == ":" && state.lastToken == "property") state.stack.push("propertyValue");
       else if (context == "propertyValue" && type == ";") state.stack.pop();
@@ -366,8 +362,8 @@ CodeMirror.defineMode("css-base", function(config, parserConfig) {
     "drop-initial-before-align", "drop-initial-size", "drop-initial-value",
     "elevation", "empty-cells", "fit", "fit-position", "flex", "flex-basis",
     "flex-direction", "flex-flow", "flex-grow", "flex-shrink", "flex-wrap",
-    "float", "float-offset", "font", "font-feature-settings", "font-family",
-    "font-kerning", "font-language-override", "font-size", "font-size-adjust",
+    "float", "float-offset", "flow-from", "flow-into", "font", "font-feature-settings",
+    "font-family", "font-kerning", "font-language-override", "font-size", "font-size-adjust",
     "font-stretch", "font-style", "font-synthesis", "font-variant",
     "font-variant-alternates", "font-variant-caps", "font-variant-east-asian",
     "font-variant-ligatures", "font-variant-numeric", "font-variant-position",
@@ -391,10 +387,12 @@ CodeMirror.defineMode("css-base", function(config, parserConfig) {
     "page", "page-break-after", "page-break-before", "page-break-inside",
     "page-policy", "pause", "pause-after", "pause-before", "perspective",
     "perspective-origin", "pitch", "pitch-range", "play-during", "position",
-    "presentation-level", "punctuation-trim", "quotes", "rendering-intent",
-    "resize", "rest", "rest-after", "rest-before", "richness", "right",
-    "rotation", "rotation-point", "ruby-align", "ruby-overhang",
-    "ruby-position", "ruby-span", "size", "speak", "speak-as", "speak-header",
+    "presentation-level", "punctuation-trim", "quotes", "region-break-after",
+    "region-break-before", "region-break-inside", "region-fragment",
+    "rendering-intent", "resize", "rest", "rest-after", "rest-before", "richness",
+    "right", "rotation", "rotation-point", "ruby-align", "ruby-overhang",
+    "ruby-position", "ruby-span", "shape-inside", "shape-outside", "size",
+    "speak", "speak-as", "speak-header",
     "speak-numeral", "speak-punctuation", "speech-rate", "stress", "string-set",
     "tab-size", "table-layout", "target", "target-name", "target-new",
     "target-position", "text-align", "text-align-last", "text-decoration",
@@ -432,7 +430,7 @@ CodeMirror.defineMode("css-base", function(config, parserConfig) {
     "darkslateblue", "darkslategray", "darkturquoise", "darkviolet",
     "deeppink", "deepskyblue", "dimgray", "dodgerblue", "firebrick",
     "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite",
-    "gold", "goldenrod", "gray", "green", "greenyellow", "honeydew",
+    "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew",
     "hotpink", "indianred", "indigo", "ivory", "khaki", "lavender",
     "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral",
     "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightpink",
@@ -455,22 +453,22 @@ CodeMirror.defineMode("css-base", function(config, parserConfig) {
     "above", "absolute", "activeborder", "activecaption", "afar",
     "after-white-space", "ahead", "alias", "all", "all-scroll", "alternate",
     "always", "amharic", "amharic-abegede", "antialiased", "appworkspace",
-    "arabic-indic", "armenian", "asterisks", "auto", "avoid", "background",
-    "backwards", "baseline", "below", "bidi-override", "binary", "bengali",
-    "blink", "block", "block-axis", "bold", "bolder", "border", "border-box",
-    "both", "bottom", "break-all", "break-word", "button", "button-bevel",
+    "arabic-indic", "armenian", "asterisks", "auto", "avoid", "avoid-column", "avoid-page",
+    "avoid-region", "background", "backwards", "baseline", "below", "bidi-override", "binary",
+    "bengali", "blink", "block", "block-axis", "bold", "bolder", "border", "border-box",
+    "both", "bottom", "break", "break-all", "break-word", "button", "button-bevel",
     "buttonface", "buttonhighlight", "buttonshadow", "buttontext", "cambodian",
     "capitalize", "caps-lock-indicator", "caption", "captiontext", "caret",
     "cell", "center", "checkbox", "circle", "cjk-earthly-branch",
     "cjk-heavenly-stem", "cjk-ideographic", "clear", "clip", "close-quote",
-    "col-resize", "collapse", "compact", "condensed", "contain", "content",
+    "col-resize", "collapse", "column", "compact", "condensed", "contain", "content",
     "content-box", "context-menu", "continuous", "copy", "cover", "crop",
     "cross", "crosshair", "currentcolor", "cursive", "dashed", "decimal",
     "decimal-leading-zero", "default", "default-button", "destination-atop",
     "destination-in", "destination-out", "destination-over", "devanagari",
     "disc", "discard", "document", "dot-dash", "dot-dot-dash", "dotted",
     "double", "down", "e-resize", "ease", "ease-in", "ease-in-out", "ease-out",
-    "element", "ellipsis", "embed", "end", "ethiopic", "ethiopic-abegede",
+    "element", "ellipse", "ellipsis", "embed", "end", "ethiopic", "ethiopic-abegede",
     "ethiopic-abegede-am-et", "ethiopic-abegede-gez", "ethiopic-abegede-ti-er",
     "ethiopic-abegede-ti-et", "ethiopic-halehame-aa-er",
     "ethiopic-halehame-aa-et", "ethiopic-halehame-am-et",
@@ -486,7 +484,7 @@ CodeMirror.defineMode("css-base", function(config, parserConfig) {
     "inactiveborder", "inactivecaption", "inactivecaptiontext", "infinite",
     "infobackground", "infotext", "inherit", "initial", "inline", "inline-axis",
     "inline-block", "inline-table", "inset", "inside", "intrinsic", "invert",
-    "italic", "justify", "kannada", "katakana", "katakana-iroha", "khmer",
+    "italic", "justify", "kannada", "katakana", "katakana-iroha", "keep-all", "khmer",
     "landscape", "lao", "large", "larger", "left", "level", "lighter",
     "line-through", "linear", "lines", "list-item", "listbox", "listitem",
     "local", "logical", "loud", "lower", "lower-alpha", "lower-armenian",
@@ -505,11 +503,11 @@ CodeMirror.defineMode("css-base", function(config, parserConfig) {
     "no-open-quote", "no-repeat", "none", "normal", "not-allowed", "nowrap",
     "ns-resize", "nw-resize", "nwse-resize", "oblique", "octal", "open-quote",
     "optimizeLegibility", "optimizeSpeed", "oriya", "oromo", "outset",
-    "outside", "overlay", "overline", "padding", "padding-box", "painted",
-    "paused", "persian", "plus-darker", "plus-lighter", "pointer", "portrait",
-    "pre", "pre-line", "pre-wrap", "preserve-3d", "progress", "push-button",
-    "radio", "read-only", "read-write", "read-write-plaintext-only", "relative",
-    "repeat", "repeat-x", "repeat-y", "reset", "reverse", "rgb", "rgba",
+    "outside", "outside-shape", "overlay", "overline", "padding", "padding-box",
+    "painted", "page", "paused", "persian", "plus-darker", "plus-lighter", "pointer",
+    "polygon", "portrait", "pre", "pre-line", "pre-wrap", "preserve-3d", "progress", "push-button",
+    "radio", "read-only", "read-write", "read-write-plaintext-only", "rectangle", "region",
+    "relative", "repeat", "repeat-x", "repeat-y", "reset", "reverse", "rgb", "rgba",
     "ridge", "right", "round", "row-resize", "rtl", "run-in", "running",
     "s-resize", "sans-serif", "scroll", "scrollbar", "se-resize", "searchfield",
     "searchfield-cancel-button", "searchfield-decoration",
@@ -580,7 +578,7 @@ CodeMirror.defineMode("css-base", function(config, parserConfig) {
         return false;
       }
     },
-    name: "css-base"
+    name: "css"
   });
 
   CodeMirror.defineMIME("text/x-scss", {
@@ -591,6 +589,12 @@ CodeMirror.defineMode("css-base", function(config, parserConfig) {
     valueKeywords: valueKeywords,
     allowNested: true,
     hooks: {
+      ":": function(stream) {
+        if (stream.match(/\s*{/)) {
+          return [null, "{"];
+        }
+        return false;
+      },
       "$": function(stream) {
         stream.match(/^[\w-]+/);
         if (stream.peek() == ":") {
@@ -618,6 +622,6 @@ CodeMirror.defineMode("css-base", function(config, parserConfig) {
         }
       }
     },
-    name: "css-base"
+    name: "css"
   });
 })();
