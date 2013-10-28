@@ -11,6 +11,8 @@ $ export DATOMIC_URI=datomic:free://localhost:4334/cljsfiddle
 $ # Note. registered for localhost:8080
 $ export GITHUB_CLIENT_ID=d220094711eae05f92ee
 $ export GITHUB_CLIENT_SECRET=9514e83d9157e01b3962c162d6e50c0ad3a9b00d
+$ # Note. e.x. SESSION_SECRET=1234567891234567
+$ export SESSION_SECRET=[16 random characters]
 $ wget http://downloads.datomic.com/0.8.4159/datomic-free-0.8.4159.zip
 $ unzip datomic-free-0.8.4159.zip
 ```
