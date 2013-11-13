@@ -10,7 +10,7 @@
     float: right;
     margin-right: 0px;
     z-index: 100;
-    top: 8px; 
+    top: 8px;
 }
 
 #cljsfiddle-buttons button {
@@ -32,9 +32,18 @@
 
 /*#output + div {
     border: 1px solid lightgray;
-    
+
 }*/
 
 .navbar {
     margin-bottom: 8px;
+}
+
+.CodeMirror {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
