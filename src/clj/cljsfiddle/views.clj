@@ -12,7 +12,7 @@
   ga('create', 'UA-9233187-2', 'cljsfiddle.net');
   ga('send', 'pageview');")
 
-(defn base [nav & content] 
+(defn base [nav & content]
   [:html {:lang "en"}
    [:head
     [:title "CLJSFiddle"]
@@ -50,68 +50,73 @@
     (when user [:li [:a {:href (str "/user/" user)} "My namespaces"]])
     [:li [:a {:href "/about"} "About"]]]
    [:ul.nav.navbar-nav.navbar-right
-    [:li (if user 
-           [:a {:href "/logout"} "Logout (" user ")"] 
+    [:li (if user
+           [:a {:href "/logout"} "Logout (" user ")"]
            [:a {:href github-login-url} "Login"])]]])
 
-(defn main-view 
-  [fiddle user] 
+(defn main-view
+  [fiddle user]
   (base (navbar user)
         [:div.row
          [:div.col-lg-12
           [:div#alert]]]
         [:div.row
-         [:div.col-lg-6 
-          
+         [:div#tab-container.col-lg-6
+
           [:ul#editor-tabs.nav.nav-tabs
            [:li.active [:a {:href "#cljs-editor-tab" :data-toggle "tab"} "cljs"]]
            [:li [:a {:href "#html-editor-tab" :data-toggle "tab"} "html"]]
            [:li [:a {:href "#css-editor-tab" :data-toggle "tab"} "css"]]
-           [:span#cljsfiddle-buttons 
+           [:span#cljsfiddle-buttons
             [:button#run-btn.btn.btn-default.btn-xs {:data-toggle "tooltip"
-                                                     :title "Compile & Run"} 
+                                                     :title "Compile & Run"}
              [:span.glyphicon.glyphicon-play]]
             [:button#save-btn.btn.btn-default.btn-xs {:data-toggle "tooltip"
-                                                      :title "Save"} 
-             [:span.glyphicon.glyphicon-floppy-save]]]] 
-          
+                                                      :title "Save"}
+             [:span.glyphicon.glyphicon-floppy-save]]]]
+
           [:div.tab-content
            [:div#cljs-editor-tab.tab-pane.active
-            [:textarea#cljs-editor.tab-pane.active (escape-html (-> fiddle 
+            [:textarea#cljs-editor.tab-pane.active (escape-html (-> fiddle
                                                                     :cljsfiddle/cljs
                                                                     :cljsfiddle.src/blob
-                                                                    :cljsfiddle.blob/text))]] 
+                                                                    :cljsfiddle.blob/text))]]
            [:div#html-editor-tab.tab-pane
-            [:textarea#html-editor.tab-pane (escape-html (-> fiddle 
+            [:textarea#html-editor.tab-pane (escape-html (-> fiddle
                                                              :cljsfiddle/html
                                                              :cljsfiddle.src/blob
                                                              :cljsfiddle.blob/text))]]
            [:div#css-editor-tab.tab-pane
-            [:textarea#css-editor.tab-pane (escape-html (-> fiddle 
+            [:textarea#css-editor.tab-pane (escape-html (-> fiddle
                                                             :cljsfiddle/css
                                                             :cljsfiddle.src/blob
                                                             :cljsfiddle.blob/text))]]]
 
-          [:div#output {:style "height:100px;width:100%;border:1px solid lightgray;overflow:auto;padding-left:6px;padding-top:6px"}]]
+          [:div#outut-container {:style "position: relative;"}
+           [:div#resize-handle {:style "height:3px; background: #ccc; cursor: ns-resize;"}]
+           [:div#output {:style "height:100px;width:100%;border:1px solid lightgray;overflow:auto;padding-left:6px;padding-top:6px"}]
+           [:button#clear-output-btn.btn.btn-default.btn-xs {:style "position: absolute; right: 5px; bottom: 5px;"
+                                                             :title "clear output"
+                                                             :data-toggle "tooltip"} "clear"]]]
 
-         [:div.col-lg-6 
+         [:div.col-lg-6
           [:div.row
            [:div.col-lg-12
             [:iframe#result-frame {:seamless "seamless"
                                    :sandbox "allow-scripts"
                                    :width "100%"
                                    :style "border: 1px solid lightgray;height:532px;"}]]]]]
-        
+
         [:div.row {:style "margin-top:20px;"}
          [:div.col-lg-12
-          [:p.text-center {:style "margin-bottom: 10px;"} 
+          [:p.text-center {:style "margin-bottom: 10px;"}
            [:a {:href "http://cljsfiddle.net"} "cljsfiddle.net"] " &copy; 2013 Jonas Enlund"]]]))
 
 (defn html-view [ns fiddle deps]
   [:html
    [:head
     [:title ns]
-    [:style (-> fiddle 
+    [:style (-> fiddle
                 :cljsfiddle/css
                 :cljsfiddle.src/blob
                 :cljsfiddle.blob/text)]
@@ -137,20 +142,20 @@
         [:div.row
          [:div.col-lg-12
           [:h3 "About CLJSFiddle"]
-          [:ul 
+          [:ul
            [:li "CLJSFiddle is open source and available on " [:a {:href "http://github.com/jonase/cljsfiddle"} "github."]]
            [:li "Feel free to open bug reports and feature requests! Pull requests are also appreciated!"]
            [:li [:strong "Help needed"] " especially around user interface design."]]
-          
+
           [:h3 "How does it work?"]
           [:ul
            [:li "In order to save your work you" [:strong " must login "] "via your github account."]
            [:li "Prefix your namespace with your username: " [:pre "(ns username.test)"]]
            [:li "Saved fiddles can be accessed either by"
-            [:ul 
+            [:ul
              [:li "Fiddle view: " [:span {:style "font-family:monospace"} "http://cljsfiddle.net/fiddle/name.space"]]
              [:li "Html view: " [:span {:style "font-family:monospace"} "http://cljsfiddle.net/view/name.space"]]
-             [:li "Append the url with " [:span {:style "font-family:monospace"} "?as-of=&lt;some-date&gt;"] 
+             [:li "Append the url with " [:span {:style "font-family:monospace"} "?as-of=&lt;some-date&gt;"]
               " for older versions and permalinks."]
              [:li "The date format is the same as clojure instant literals (without the #inst part): 2013-09-29 or 2013-10-02T13:15:01 "]]]]]]))
 
@@ -163,4 +168,3 @@
            (for [[ns date] (reverse (sort-by second fiddles))]
              [:li (subs (pr-str date) 7 26) " " [:a {:href (str "/fiddle/" ns)} ns]
               " | " [:a {:href (str "/view/" ns)} "HTML view"]])]]]))
-
