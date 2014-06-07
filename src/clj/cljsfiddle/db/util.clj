@@ -3,7 +3,9 @@
             [clojure.java.io :as io]
             [clojure.tools.reader :as reader]
             [datomic.api :as d]
-            [cljs.closure :as cljs]
+            [cljs.env :as cljs-env]
+            [cljs.closure :as closure]
+            [cljs.js-deps :as cljs-deps]
             [environ.core :refer (env)])
   (:import [clojure.lang LineNumberingPushbackReader]
            [java.io StringReader BufferedReader]
@@ -27,15 +29,17 @@
   (DigestUtils/shaHex s))
 
 (defn parse-js-ns [js-src]
-  (-> js-src 
-      StringReader. 
-      BufferedReader. 
-      line-seq 
-      cljs/parse-js-ns))
+  (-> js-src
+      StringReader.
+      BufferedReader.
+      line-seq
+      cljs-deps/parse-js-ns))
 
 (defn cljs-object-from-src [cljs-src-str]
   (let [cljs-src (read-all cljs-src-str)
-        js-src (cljs/-compile cljs-src {}) ;; TODO perf.
+        js-src (cljs-env/with-compiler-env
+                 (cljs-env/default-compiler-env)
+                 (closure/-compile cljs-src {})) ;; TODO perf.
         {:keys [provides requires]} (parse-js-ns js-src)]
     {:src cljs-src-str
      :js-src js-src

@@ -3,6 +3,7 @@
             [clojure.java.io :as io]
             [datomic.api :as d]
             [cljs.closure :as cljs]
+            [cljs.js-deps :as cljs-deps]
             [environ.core :refer (env)]
             [cljsfiddle.db.src :as src]
             [cljsfiddle.db.schema :refer (schema)]
@@ -30,7 +31,7 @@
   (filter (fn [file]
             (and (some #(.startsWith file %) paths)
                  (some #(.endsWith file %) [".js" ".cljs"])))
-          (mapcat cljs/jar-entry-names* jars)))
+          (mapcat cljs-deps/jar-entry-names* jars)))
 
 
 (defn goog-base-tx [db]
@@ -51,10 +52,10 @@
        [[:db/add src-eid :cljsfiddle.src/type :cljsfiddle.src.type/js]
         [:db/add src-eid :cljsfiddle.src/blob blob-eid]
         [:db/add src-eid :db/ident :goog/base]]
-       
+
        (not= old-sha new-sha)
        [[:db/add src-eid :cljsfiddle.src/blob blob-eid]]
-       
+
        :else
        []))))
 
@@ -74,9 +75,9 @@
 (defn -main [uri]
   (let [conn (d/connect uri)
         files (find-files #{"cljs/" "clojure/" "goog/" "domina" "hiccups" "dommy"}
-                          (filter #(.endsWith % ".jar") 
-                                  (-> "java.class.path" 
-                                      System/getProperty 
+                          (filter #(.endsWith % ".jar")
+                                  (-> "java.class.path"
+                                      System/getProperty
                                       (s/split #":"))))
         js-files (filter #(.endsWith % ".js") files)
         js-objects (map js-object-from-file js-files)
@@ -122,35 +123,35 @@
 
   (use 'clojure.pprint)
   (def uri (env :datomic-uri))
-  
+
   (do (d/delete-database uri)
       (d/create-database uri))
 
 
-  
+
   (def conn (d/connect uri))
-  
+
   @(d/transact conn schema)
- 
+
   (d/q '[:find ?e :where
          [?e :cljsfiddle.src/ns "goog.string"]]
        (d/db conn))
 
   (d/entity (d/db conn) :goog/base)
-  
-  (d/q '[:find ?sha 
+
+  (d/q '[:find ?sha
          :in $ ?sha
          :where
          [?e :cljsfiddle.blob/sha ?sha]]
        (d/db conn)
        )
-  
+
   (d/touch (d/entity (d/db conn) :db.type/ref))
 
 
   (src/cljs-tx (d/db conn) (cljs-object "domina.cljs"))
 
-  (:cljsfiddle.src/ns (d/entity (d/db conn) 17592186045435)) 
+  (:cljsfiddle.src/ns (d/entity (d/db conn) 17592186045435))
 
   (pprint (d/touch (:cljsfiddle.src/blob (d/entity (d/db conn) :goog/base))))
 
