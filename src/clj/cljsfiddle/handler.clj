@@ -14,7 +14,7 @@
             [ring.middleware.session.cookie :as cookie]
             [ring.middleware.stacktrace :refer (wrap-stacktrace)]
             [ring.middleware.edn :refer (wrap-edn-params)]
-            [compojure.core :refer :all] 
+            [compojure.core :refer :all]
             [compojure.handler :as handler]
             [compojure.route :as route]
             [environ.core :refer (env)]
@@ -41,21 +41,21 @@
                                 :client_secret (env :github-client-secret)
                                 :code code}
                   :headers {"Accept" "application/json"}})
-      (:body) 
-      (json/decode true) 
+      (:body)
+      (json/decode true)
       :access_token))
 
 (defn get-username [token]
   (-> (http/get (str "https://api.github.com/user?access_token=" token)
                 {:headers {"accept" "application/json"}})
-      (:body) 
-      (json/decode true) 
+      (:body)
+      (json/decode true)
       :login))
 
 (defn parse-ns-form [src]
-  (try 
+  (try
     (let [form (edn/read-string src)]
-      (if (and (seq? form) 
+      (if (and (seq? form)
                (= 'ns (first form))
                (symbol? (second form)))
         [:ok (name (second form))]
@@ -63,7 +63,7 @@
     (catch Exception e
       [:exception (.getMessage e)])))
 
-(defn as-of* 
+(defn as-of*
   "Get the db as of date or latest db if date is nil"
   [conn date]
   (let [db (d/db conn)]
@@ -78,10 +78,10 @@
      (assoc {:headers {"Content-Type" "text/html"}
              :status 200
              :body (html5 (views/main-view (d/entity (d/db conn)
-                                                     :cljsfiddle/default-fiddle) 
+                                                     :cljsfiddle/default-fiddle)
                                            username))}
        :session (dissoc session :fiddle)))
-   
+
    (GET "/fiddle/:ns"
      {{:keys [username] :as session} :session
       {:keys [ns as-of]} :params}
@@ -94,7 +94,7 @@
                  :body (html5 (views/main-view fiddle username))}
            :session (merge session
                            {:fiddle ns})))))
-   
+
    (GET "/view/:ns"
      {{:keys [ns as-of]} :params}
      (let [date (try (inst/read-instant-date as-of)
@@ -136,7 +136,7 @@
                          (let [db (db/save-fiddle conn
                                                   (util/fiddle (:cljs fiddle)
                                                                (:html fiddle)
-                                                               (:css  fiddle)))] 
+                                                               (:css  fiddle)))]
                            {:status :save-success
                             :date (subs (->> db d/basis-t d/t->tx (d/entity db) :db/txInstant pr-str)
                                         7 36)
@@ -147,7 +147,7 @@
                        {:status :save-fail
                         :ns ns
                         :user username}))))
-      
+
    ;; TODO: this can be done with nginx try_files
    (GET "/jscache/:version/:file"
      [version file]
@@ -168,31 +168,33 @@
          (assoc (res/redirect (if-let [fiddle (:fiddle session)]
                                 (str "/fiddle/" fiddle)
                                 "/"))
-           :session (merge session {:token token 
+           :session (merge session {:token token
                                     :username username})))))
 
    (GET "/logout"
      []
      (assoc (res/redirect "/") :session nil))
-   
+
    (context "/compiler" [] (closure/compile-routes conn))
    (context "/deps" [] (closure/deps-routes conn))
-   
+
    (route/resources "/")
    (route/not-found "Not Found")))
 
-(defn app [conn store]
-  (handler/site (app-routes conn) 
-                {:session {:store store}}))
-
-(defn -main []
-  (let [port (Integer/parseInt (or (env "PORT") "8080"))
-        store (cookie/cookie-store {:key (env :session-secret)})
+(defn get-handler []
+  (let [store (cookie/cookie-store {:key (env :session-secret)})
         db-uri (env :datomic-uri)
         conn (d/connect db-uri)]
-    (jetty/run-jetty (-> (app conn store)
-                         wrap-edn-params
-                         wrap-stacktrace) 
+    (-> (handler/site (app-routes conn)
+                      {:session {:store store}})
+        wrap-edn-params)))
+
+(def app (get-handler))
+
+(defn -main []
+  (let [port (Integer/parseInt (or (env "PORT") "8080"))]
+    (jetty/run-jetty (-> app
+                         wrap-stacktrace)
                      {:port port :join? false})))
 
 ;; (.stop server)
