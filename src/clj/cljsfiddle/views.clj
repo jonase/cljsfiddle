@@ -36,7 +36,7 @@
     [:script {:src "/js/addon/edit/matchbrackets.js"}]
     [:script {:src "/js/addon/edit/closebrackets.js"}]
     [:script {:src "/js/app.js"}]
-    [:script "cljsfiddle.core.init(" (env :cljsfiddle-version) ");"]]])
+    [:script "cljsfiddle.core.init('" (env :cljsfiddle-version) "');"]]])
 
 (def ^:private github-login-url (str "https://github.com/login/oauth/authorize?client_id=" (env :github-client-id)))
 
