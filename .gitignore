@@ -9,7 +9,6 @@ pom.xml
 .lein-deps-sum
 .lein-failures
 .lein-plugins
-.lein-env
 .lein-repl-history
 .env
 resources/public/js/app.js*

@@ -29,6 +29,12 @@
 (assert (env :github-client-id) "GITHUB_CLIENT_ID environment variable not set")
 (assert (env :github-client-secret "GITHUB_CLIENT_SECRET environment variable not set"))
 
+(defn ensure-jscache-dir []
+  (let [p (str "resources/jscache/" (:cljsfiddle-version env) "/")
+        f (java.io.File. p)]
+    (when (.mkdirs f)
+      (println "Created" p))))
+
 (defn edn-response [edn-data]
   {:status 200
    :headers {"Content-Type" "application/edn"}
@@ -192,6 +198,7 @@
 (def app (get-handler))
 
 (defn -main []
+  (ensure-jscache-dir)
   (let [port (Integer/parseInt (or (env "PORT") "8080"))]
     (jetty/run-jetty (-> app
                          wrap-stacktrace)

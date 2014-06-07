@@ -1,0 +1,11 @@
+;; For dev use
+{
+  :datomic-uri "datomic:free://localhost:4334/cljsfiddle"
+
+  ;; Registered for localhost:8080
+  :github-client-id "d220094711eae05f92ee"
+  :github-client-secret "9514e83d9157e01b3962c162d6e50c0ad3a9b00d"
+
+  ;; 16 random characters
+  :session-secret "1234567891234567"
+}
