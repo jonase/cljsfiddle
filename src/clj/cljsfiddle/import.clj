@@ -15,6 +15,15 @@
            [java.io StringReader BufferedReader]
            [org.apache.commons.codec.digest DigestUtils]))
 
+
+(defn create-db [& [uri]]
+  (let [uri (or uri
+                (env :datomic-uri)
+                "datomic:free://localhost:4334/cljsfiddle")]
+    (d/create-database uri)
+    (let [conn (d/connect uri)]
+       @(d/transact conn schema))))
+
 ;; Import js and cljs from the classpath into datomic.
 
 (defn find-files [paths jars]
