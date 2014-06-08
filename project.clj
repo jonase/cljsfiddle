@@ -2,8 +2,6 @@
   :description "CLJSFiddle"
   :url "http://cljsfiddle.net"
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 #_[org.clojure/clojurescript "0.0-1853"]
-                 #_[org.clojure/clojurescript "0.0-1896"]
                  [org.clojure/clojurescript "0.0-2227"]
                  [org.clojure/tools.reader "0.8.4"]
                  [org.clojure/core.match "0.2.1"]
@@ -26,7 +24,8 @@
                  [domina "1.0.2"]
                  [prismatic/dommy "0.1.2"]
                  [hiccups "0.3.0"]
-                 [cljs-ajax "0.2.4"]]
+                 [cljs-ajax "0.2.4"]
+                 [om "0.6.4"]]
   :source-paths ["src/clj" "src/cljs"]
   :plugins [[lein-ring "0.8.10"]
             [lein-cljsbuild "1.0.3"]]

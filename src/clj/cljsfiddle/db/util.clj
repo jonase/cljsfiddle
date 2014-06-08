@@ -6,6 +6,7 @@
             [cljs.env :as cljs-env]
             [cljs.closure :as closure]
             [cljs.js-deps :as cljs-deps]
+            [cljs.tagged-literals :as tags]
             [environ.core :refer (env)])
   (:import [clojure.lang LineNumberingPushbackReader]
            [java.io StringReader BufferedReader]
@@ -20,7 +21,8 @@
       (recur reader (conj result form) eof))))
 
 (defn read-all [src]
-  (binding [reader/*read-eval* false]
+  (binding [reader/*read-eval* false
+            reader/*data-readers* tags/*cljs-data-readers*]
     (read-all* (LineNumberingPushbackReader. (StringReader. src))
                []
                (Object.))))
