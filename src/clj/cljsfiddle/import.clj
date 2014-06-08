@@ -74,7 +74,8 @@
 ;; TODO: Figure out if schema is installed.
 (defn -main [uri]
   (let [conn (d/connect uri)
-        files (find-files #{"cljs/" "clojure/" "goog/" "domina" "hiccups" "dommy" "om"}
+        files (find-files #{"cljs/" "clojure/" "goog/" "domina" "hiccups" 
+                            "dommy" "om" "quiescent" "reagent"}
                           (filter #(.endsWith % ".jar")
                                   (-> "java.class.path"
                                       System/getProperty
