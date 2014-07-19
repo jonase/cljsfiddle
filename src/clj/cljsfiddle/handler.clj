@@ -27,7 +27,7 @@
 (assert (env :session-secret) "SESSION_SECRET environment variable not set")
 (assert (env :cljsfiddle-version) "CLJSFIDDLE_VERSION environment variable not set")
 (assert (env :github-client-id) "GITHUB_CLIENT_ID environment variable not set")
-(assert (env :github-client-secret "GITHUB_CLIENT_SECRET environment variable not set"))
+(assert (env :github-client-secret) "GITHUB_CLIENT_SECRET environment variable not set")
 
 (defn ensure-jscache-dir []
   (let [p (str "resources/jscache/" (:cljsfiddle-version env) "/")
